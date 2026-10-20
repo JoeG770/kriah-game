@@ -118,15 +118,22 @@ function help(){
 // Default recognizer = on-device voice-activity + syllable-nucleus counting (no network, no re-prompts).
 // Optional: cloud verifier (proxy URL set in parent screen) checks each utterance's text and rolls back mismatches.
 // Optional: Web Speech (experimental; may re-prompt on iOS).
-const CFG=Object.assign({mode:'vad',proxy:'',sens:1,maxMist:3},JSON.parse(localStorage.getItem('kriah-cfg')||'{}'));
+// Fill in after deploying kriah-proxy, e.g. 'https://kriah-proxy.vercel.app/api/transcribe'
+const PROXY_URL='https://kriah-proxy.vercel.app/api/transcribe';
+const CFG=Object.assign({mode:PROXY_URL?'cloud':'vad',proxy:PROXY_URL,sens:1,maxMist:3},JSON.parse(localStorage.getItem('kriah-cfg')||'{}'));
+if(PROXY_URL&&!CFG.proxy){CFG.proxy=PROXY_URL;if(CFG.mode==='vad')CFG.mode='cloud'}
 const saveCfg=()=>localStorage.setItem('kriah-cfg',JSON.stringify(CFG));
-let MIC=null,AN=null,BUF=null,speaking=false,wantListen=false,vadT=null;
+const RING={sr:48000,buf:null,w:0};let MIC=null,AN=null,BUF=null,speaking=false,wantListen=false,vadT=null;
 async function ensureMic(){
   if(MIC&&MIC.getAudioTracks().some(t=>t.readyState==='live'))return true;
   try{MIC=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
   catch(e){$('mic').textContent='🚫';return false}
   const a=ac();if(a.state==='suspended')await a.resume();
   const src=a.createMediaStreamSource(MIC);AN=a.createAnalyser();AN.fftSize=1024;BUF=new Float32Array(AN.fftSize);src.connect(AN);
+  // rolling PCM buffer (last 12 s) so each utterance can be cut out with pre-roll and sent as WAV
+  RING.sr=a.sampleRate;RING.buf=new Float32Array(Math.round(a.sampleRate*12));RING.w=0;
+  const sp=a.createScriptProcessor(4096,1,1);sp.onaudioprocess=e=>{const d=e.inputBuffer.getChannelData(0);for(let i=0;i<d.length;i++){RING.buf[RING.w%RING.buf.length]=d[i];RING.w++}};
+  const mute=a.createGain();mute.gain.value=0;src.connect(sp);sp.connect(mute);mute.connect(a.destination);
   MIC.getAudioTracks()[0].onended=()=>{MIC=null};
   return true;
 }
@@ -172,23 +179,24 @@ function onUtterance(nuc,dur){
   stopClip({from:startPos,to:G.pos});
 }
 // ---- cloud verifier (optional) ----
-function startClip(){
-  if(CFG.mode!=='cloud'||!CFG.proxy||!MIC||typeof MediaRecorder==='undefined')return;
-  try{V.chunks=[];V.rec=new MediaRecorder(MIC);V.rec.ondataavailable=e=>V.chunks.push(e.data);V.rec.start()}catch(e){V.rec=null}
-}
+function ringPos(){return RING.w}
+function startClip(){V.clipStart=RING.buf?Math.max(0,RING.w-Math.round(RING.sr*0.35)):0}
 function stopClip(span){
-  const r=V.rec;V.rec=null;if(!r)return;
-  r.onstop=()=>{if(!span||span.to<=span.from)return;
-    const blob=new Blob(V.chunks,{type:r.mimeType||'audio/mp4'});const exp=[];
-    for(let k=span.from;k<span.to;k++){const u=units(G.l)[k];exp.push(G.l.kind==='words'?u.w:G.l.kind==='letters'?G.l.say[k]:u)}
-    verify(blob,exp,span)};
-  try{r.stop()}catch(e){}
+  if(CFG.mode!=='cloud'||!CFG.proxy||!RING.buf||!span||span.to<=span.from)return;
+  const end=RING.w,st=Math.max(V.clipStart,end-RING.buf.length+1),n=end-st;if(n<RING.sr*0.15)return;
+  const sr=16000,ratio=RING.sr/sr,m=Math.floor(n/ratio),pcm=new Int16Array(m);
+  for(let i=0;i<m;i++){const v=RING.buf[(st+Math.floor(i*ratio))%RING.buf.length];pcm[i]=Math.max(-1,Math.min(1,v))*32767}
+  const wav=new DataView(new ArrayBuffer(44+m*2));const W=(o,t)=>{for(let i=0;i<t.length;i++)wav.setUint8(o+i,t.charCodeAt(i))};
+  W(0,'RIFF');wav.setUint32(4,36+m*2,true);W(8,'WAVEfmt ');wav.setUint32(16,16,true);wav.setUint16(20,1,true);wav.setUint16(22,1,true);wav.setUint32(24,sr,true);wav.setUint32(28,sr*2,true);wav.setUint16(32,2,true);wav.setUint16(34,16,true);W(36,'data');wav.setUint32(40,m*2,true);
+  for(let i=0;i<m;i++)wav.setInt16(44+i*2,pcm[i],true);
+  const exp=[];for(let k=span.from;k<span.to;k++){const u=units(G.l)[k];exp.push(G.l.kind==='words'?u.w:G.l.kind==='letters'?G.l.say[k]:u)}
+  verify(new Blob([wav.buffer],{type:'audio/wav'}),exp,span);
 }
 async function verify(blob,exp,span){
   try{
-    const fd=new FormData();fd.append('audio',blob,'a.'+((blob.type.includes('webm'))?'webm':'mp4'));fd.append('expected',exp.join(' '));
+    const fd=new FormData();fd.append('audio',blob,'a.wav');fd.append('expected',exp.join(' '));
     const res=await fetch(CFG.proxy,{method:'POST',body:fd});if(!res.ok)return;const j=await res.json();
-    const toks=(j.text||'').trim().split(/\s+/).filter(Boolean);
+    const toks=(j.text||'').replace(/[.,:!?]/g,'').trim().split(/\s+/).filter(Boolean);if(!toks.length)return;
     let ok=0;for(let k=span.from;k<span.to;k++){if(toks.some(t=>matchUnit(G.l,k,t))||toks.join('')&&matchUnit(G.l,k,toks.join('')))ok++}
     if(ok<Math.ceil((span.to-span.from)*0.6)&&G&&G.running&&G.pos===span.to){rollback(span.from)}
   }catch(e){}
@@ -206,7 +214,7 @@ function webSpeech(){
 }
 function say(t,cb){
   const ss=window.speechSynthesis;if(!ss){cb&&cb();return}
-  speaking=true;V.on=false;if(V.rec)stopClip(null);
+  speaking=true;V.on=false;
   const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';u.rate=.7;const v=ss.getVoices().find(v=>/he/i.test(v.lang));if(v)u.voice=v;
   let done=false;const fin=()=>{if(done)return;done=true;setTimeout(()=>{speaking=false;V.acc=0},350);cb&&cb()};
   u.onend=u.onerror=fin;ss.cancel();ss.speak(u);setTimeout(fin,4000);
