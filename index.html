@@ -48,11 +48,29 @@ button{font-family:inherit;border:0;border-radius:24px;cursor:pointer}
 .chars{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}.chars button{font-size:60px;background:#eee;padding:10px 20px}
 .chars button.sel{background:#ffd23f}
 #ch{background:#f4f0ff;border-radius:16px}
+.lv .rec{font-size:18px}
+#spTrack{position:relative;height:30px;background:repeating-linear-gradient(90deg,#fff3 0 20px,#fff1 20px 40px);border-radius:15px;margin:2px 0 6px}
+#spTrack .fin{position:absolute;left:4px;top:0;font-size:24px}
+#spBoard{flex:1;background:#fff;border-radius:30px;overflow:auto;padding:4px;text-align:center}
+#spTimer{position:absolute;top:calc(env(safe-area-inset-top) + 6px);left:50%;transform:translateX(-50%);font-size:64px;font-weight:bold;background:#0006;border-radius:30px;padding:0 30px;font-variant-numeric:tabular-nums;z-index:3}
+#spTimer.behind{color:#ffb3bd}
+#spGo{position:absolute;inset:0;margin:auto;width:340px;height:340px;border-radius:50%;background:#2bd66b;color:#fff;font-size:110px;box-shadow:0 14px 0 #179447,0 0 0 18px #fff6;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:4;animation:bob 1.2s ease-in-out infinite}
+#spGo span,#spStop span{font-size:46px}
+#spBar{display:flex;align-items:center;gap:20px;height:130px;padding-top:10px;direction:ltr}
+#spStop{width:420px;height:115px;border-radius:60px;background:#ff5d73;color:#fff;font-size:80px;box-shadow:0 12px 0 #b3203a;visibility:hidden;display:flex;gap:20px;align-items:center;justify-content:center;z-index:4}
+#spX{width:200px;height:115px;border-radius:60px;background:#fff;color:#ff5d73;font-size:46px;font-weight:bold;box-shadow:0 8px 0 #ccc;z-index:4}
+#spMist.over{color:#b3203a}
+.pop{animation:pop .35s}@keyframes pop{40%{transform:scale(1.3)}}
+@keyframes bob{50%{transform:scale(1.06)}}
+.banner{font-size:56px;background:linear-gradient(90deg,#ffd23f,#ff9f1c);color:#fff;border-radius:24px;padding:6px 20px;animation:pop .6s 3;text-shadow:0 3px 0 #b86b00}
+.cmp{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;font-size:24px;margin:10px 0}
+.cmp .bar{background:#eee;border-radius:12px;height:26px;overflow:hidden;direction:rtl}.cmp .bar span{display:block;height:100%;border-radius:12px}
+#count.pop{animation:pop .5s}
 #confetti{position:absolute;inset:0;pointer-events:none;z-index:7}
 </style></head><body>
 <div id="sMap" class="screen on">
  <div class="top"><span>🏁 מֵרוֹץ קְרִיאָה</span><span class="sp"></span><span class="pill" id="streakP">🔥 0</span><span class="pill" id="coinsP">🪙 0</span>
- <button class="pill" style="font-size:30px;color:#fff" onclick="openChars()" id="charB">🚗</button>
+ <button class="pill" style="font-size:28px;color:#fff;background:#ff9f1c" id="modeB">🏁</button><button class="pill" style="font-size:30px;color:#fff" onclick="openChars()" id="charB">🚗</button>
  <button class="pill" style="font-size:22px;color:#fff" id="parentB">👨 הורה</button></div>
  <div id="map"></div></div>
 <div id="sPlay" class="screen">
@@ -62,6 +80,14 @@ button{font-family:inherit;border:0;border-radius:24px;cursor:pointer}
  <div id="board"></div>
  <button id="ovr" title="parent">✓</button><button id="ovx" title="parent">✗</button>
  <div id="count"></div></div>
+<div id="sSpeed" class="screen">
+ <div id="hud"><button class="pill" style="color:#fff;font-size:30px" id="spQuit">✖</button><span class="pill" id="spBest" style="font-size:30px">🏆</span><span style="flex:1"></span><span id="spTitle" style="font-size:30px"></span></div>
+ <div id="spTrack"><span class="fin">🏁</span><span id="spGhost" class="car ghost">🚗</span></div>
+ <div id="spBoard" class="pg"></div>
+ <div id="spTimer">0.0</div>
+ <button id="spGo">▶ <span>הַתְחֵל</span></button>
+ <div id="spBar"><button id="spX"><span id="spMist">✗ 0</span></button><span style="flex:1"></span><button id="spStop">⏹ <span>!סִיַּמְתִּי</span></button></div>
+</div>
 <div class="modal" id="modal"><div class="card" id="card"></div></div>
 <canvas id="confetti"></canvas>
 <script src="levels.js"></script><script src="app.js"></script>

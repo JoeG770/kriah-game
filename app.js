@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);
 const L=window.LEVELS;
 const KEY='kriah-save-v1';
-const S=Object.assign({coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false},JSON.parse(localStorage.getItem(KEY)||'{}'));
+const S=Object.assign({coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false,speed:{},mode:'speed'},JSON.parse(localStorage.getItem(KEY)||'{}'));
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const CHARS=[['🚗',0],['🚀',50],['🦄',120],['🐉',250],['🏎️',400],['🦖',600],['🛸',800],['🐎',1000]];
 // ---------- phonetics ----------
@@ -56,6 +56,8 @@ function unlocked(i){return S.unlockAll||i===0||(S.best[L[i-1].id]||{}).stars>=1
 function today(){return new Date().toLocaleDateString('en-CA')}
 function dayStreak(){let n=0,d=new Date();const set=new Set(S.days);while(set.has(d.toLocaleDateString('en-CA'))){n++;d.setDate(d.getDate()-1)}return n}
 function renderMap(){
+  $('modeB').innerHTML=S.mode==='speed'?'🏁 מֵרוֹץ':'🎯 אִימּוּן';
+  if(S.mode==='speed')return renderSpeedMap();
   $('coinsP').textContent='🪙 '+S.coins;$('streakP').textContent='🔥 '+dayStreak()+' יָמִים';$('charB').textContent=S.char;
   $('map').innerHTML=L.map((l,i)=>{const b=S.best[l.id];const lk=!unlocked(i);
     return `<button class="lv ${l.boss?'boss':''} ${lk?'lock':''}" data-i="${i}"><b>${lk?'🔒':l.boss?'👹':i+1}</b>${l.title}<span class="st">${b?'⭐'.repeat(b.stars)+'☆'.repeat(3-b.stars):''}</span></button>`}).join('');
@@ -116,7 +118,7 @@ function help(){
 // Default recognizer = on-device voice-activity + syllable-nucleus counting (no network, no re-prompts).
 // Optional: cloud verifier (proxy URL set in parent screen) checks each utterance's text and rolls back mismatches.
 // Optional: Web Speech (experimental; may re-prompt on iOS).
-const CFG=Object.assign({mode:'vad',proxy:'',sens:1},JSON.parse(localStorage.getItem('kriah-cfg')||'{}'));
+const CFG=Object.assign({mode:'vad',proxy:'',sens:1,maxMist:3},JSON.parse(localStorage.getItem('kriah-cfg')||'{}'));
 const saveCfg=()=>localStorage.setItem('kriah-cfg',JSON.stringify(CFG));
 let MIC=null,AN=null,BUF=null,speaking=false,wantListen=false,vadT=null;
 async function ensureMic(){
@@ -251,9 +253,11 @@ function parent(){
    <b>שיאים:</b> ${L.filter(l=>S.best[l.id]).map(l=>l.title+': '+S.best[l.id].spm+' הב/דק').join(' · ')||'—'}</div>
    <label style="font-size:24px"><input type="checkbox" id="ua" ${S.unlockAll?'checked':''}> פתח את כל השלבים</label><br>
    <div style="font-size:18px;color:#666">✓ / ✗ בפינה השמאלית התחתונה: ✓ = נכון (קדימה), ✗ = טעות (חוזר צעד אחורה)</div>
-   <div style="font-size:20px;text-align:right;margin:8px 0">זיהוי: <select id="md"><option value="vad">קול (מקומי, ללא אינטרנט)</option><option value="cloud">קול + בדיקה בענן</option><option value="webspeech">Web Speech (ניסיוני)</option></select>
+   <div style="font-size:22px;text-align:right">מֵרוֹץ: מַקְסִימוּם טָעוּיוֹת לְשִׂיא: <b id="mmv">${CFG.maxMist}</b> <input id="mm" type="range" min="0" max="10" step="1" value="${CFG.maxMist}"></div>
+   <div style="font-size:20px;text-align:right;margin:8px 0">זיהוי (אִימּוּן): <select id="md"><option value="vad">קול (מקומי, ללא אינטרנט)</option><option value="cloud">קול + בדיקה בענן</option><option value="webspeech">Web Speech (ניסיוני)</option></select>
    רגישות <input id="sens" type="range" min="0.5" max="2" step="0.1" value="${CFG.sens}"><br>כתובת שרת (לבדיקה בענן): <input id="px" style="width:60%" value="${CFG.proxy}" placeholder="https://...workers.dev"></div>
    <button class="big" onclick="closeModal();renderMap()">סגור</button>`);
+  $('mm').oninput=e=>{CFG.maxMist=+e.target.value;$('mmv').textContent=CFG.maxMist;saveCfg()};
   $('md').value=CFG.mode;$('md').onchange=e=>{CFG.mode=e.target.value;saveCfg()};$('sens').oninput=e=>{CFG.sens=+e.target.value;saveCfg()};$('px').onchange=e=>{CFG.proxy=e.target.value.trim();if(CFG.proxy&&CFG.mode==='vad')CFG.mode='cloud';saveCfg()};
   $('ua').onchange=e=>{S.unlockAll=e.target.checked;save()};
   const c=$('ch').getContext('2d'),R=S.runs.slice(-30);c.fillStyle='#3b1d8f';c.font='18px sans-serif';c.fillText('הברות לדקה (30 ריצות אחרונות)',440,22);
@@ -268,9 +272,70 @@ function confetti(big){const cv=$('confetti'),x=cv.getContext('2d');cv.width=inn
   [523,659,784,1046].forEach((n,k)=>setTimeout(()=>beep(n,.2,'triangle'),k*110))}
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js');
 window.speechSynthesis&&speechSynthesis.getVoices();
-renderMap();
 window.__T={start,advance,wrong,help,get G(){return G},S,matchUnit,L};
 // screenshot/demo hook: #demo=<levelIndex>,<steps>
 if(/^#demo=/.test(location.hash)){document.head.insertAdjacentHTML("beforeend","<style>*{transition:none!important;animation:none!important}</style>");let [i,k]=location.hash.slice(6).split(',');k=+k;i=L.findIndex(l=>l.id===i);S.unlockAll=true;
   start(i);if(L[i].kind==='words'){const l=L[i];S.best[l.id]={stars:2,time:60,times:l.words.map((_,j)=>j*0.8),spm:40}}setTimeout(()=>{G.running=true;for(let n=0;n<k;n++)advance();G.t0=performance.now()-k*900;if(G.ghost)moveCar(G.ghost,k+2);G.last=1e12},4200)}
 if(location.hash==='#seed'){S.coins=180;S.best={};L.slice(0,6).forEach((l,i)=>S.best[l.id]={stars:[3,3,2,3,2,1][i],time:30,times:[],spm:30+i*4});S.days=[today()];S.runs=[30,34,33,40,44,47].map((s,i)=>({id:'x',d:i,spm:s,acc:.9}));S.vowelMiss={e:7,u:4,o:2};renderMap()}
+
+// =================== SPEED RUN (default mode) ===================
+const SP=(()=>{const pages=[];const seen={};
+  L.forEach(l=>{const k='pg'+l.page;if(seen[k]){seen[k].n+=units(l).length;return}
+    const n=l.kind==='words'?l.words.reduce((a,w)=>a+w.syl.length,0):units(l).length;
+    const t=l.row!==undefined?(l.page===14?'אָלֶף־בֵּית עִם נְקוּדוֹת':'עִרְבּוּבְיָא'):l.title.replace(/^בּוֹס /,'');
+    seen[k]={key:k,page:l.page,title:t,kind:l.kind,svg:l.svg,crop:l.crop,aspect:l.aspect,boss:l.boss,n,pdf:l.syllable_count_in_pdf};pages.push(seen[k])});
+  pages.forEach(p=>p.syl=p.pdf||p.n);return pages})();
+function spUnlocked(i){return S.unlockAll||i===0||!!S.speed[SP[i-1].key]}
+function renderSpeedMap(){
+  $('map').innerHTML=SP.map((p,i)=>{const b=S.speed[p.key];const lk=!spUnlocked(i);
+    return `<button class="lv ${p.boss?'boss':''} ${lk?'lock':''}" data-i="${i}"><b>${lk?'🔒':p.boss?'👹':i+1}</b>${p.title}<span class="st">${b?'⭐'.repeat(b.stars)+'☆'.repeat(3-b.stars):''}</span>${b?`<span class="rec">⏱ ${b.time.toFixed(1)}</span>`:''}</button>`}).join('');
+  $('map').querySelectorAll('.lv').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(spUnlocked(i))speedStart(i);else boop()});
+}
+$('modeB').onclick=()=>{S.mode=S.mode==='speed'?'practice':'speed';save();beep(660,.1,'triangle');renderMap()};
+let R=null;
+function speedStart(i){
+  const p=SP[i];R={i,p,mist:0,running:false,t0:0};show('sSpeed');
+  const c=p.crop,cw=c[2]-c[0],ch=c[3]-c[1];
+  $('spTitle').textContent=p.title;
+  $('spBoard').innerHTML=`<div class="page" id="spPage" style="aspect-ratio:${p.aspect}"><img src="${p.svg}" style="width:${100/cw}%;height:${100/ch}%;left:${-c[0]/cw*100}%;top:${-c[1]/ch*100}%"></div>`;
+  const b=$('spBoard'),pg=$('spPage');const H=b.clientHeight-8,W=b.clientWidth-8;pg.style.width=(p.kind!=='words'||H*p.aspect>=W*0.6?Math.min(W,H*p.aspect):W)+'px';
+  const best=S.speed[p.key];$('spBest').textContent=best?'🏆 '+best.time.toFixed(1):'🏆 —';
+  $('spGhost').style.display=best?'':'none';$('spGhost').textContent=S.char;$('spGhost').style.right='0px';
+  $('spTimer').textContent='0.0';$('spMist').textContent='✗ 0';$('spStop').style.visibility='hidden';$('spGo').style.display='flex';
+}
+$('spGo').onclick=()=>{$('spGo').style.display='none';ac();
+  const c=$('count');c.style.display='flex';let n=3;
+  const step=()=>{if(n===0){c.textContent='!יַאלְלָה';beep(880,.25);setTimeout(()=>{c.style.display='none';R.t0=performance.now();R.running=true;$('spStop').style.visibility='visible';spTick()},450);return}
+    c.textContent=n;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');beep(440+ (3-n)*80,.15);n--;setTimeout(step,800)};step()};
+function spTick(){if(!R||!R.running)return;const t=(performance.now()-R.t0)/1000;$('spTimer').textContent=t.toFixed(1);
+  const best=S.speed[R.p.key];if(best){const f=Math.min(1,t/best.time);$('spGhost').style.right=(f*($('spTrack').clientWidth-50))+'px';$('spTimer').classList.toggle('behind',t>best.time)}
+  if(Math.floor(t)!==R.sec){R.sec=Math.floor(t);if(R.sec>0&&R.sec%10===0)beep(990,.06,'triangle')}
+  requestAnimationFrame(spTick)}
+$('spX').onclick=()=>{if(!R||!R.running)return;R.mist++;$('spMist').textContent='✗ '+R.mist;boop();const x=$('spX');x.classList.remove('pop');void x.offsetWidth;x.classList.add('pop');$('spMist').classList.toggle('over',R.mist>CFG.maxMist)};
+$('spQuit').onclick=()=>{if(R)R.running=false;toMap()};
+$('spStop').onclick=()=>{if(!R||!R.running)return;R.running=false;$('spStop').style.visibility='hidden';
+  const t=(performance.now()-R.t0)/1000,p=R.p;if(t<2){toMap();return}
+  if(R.mist>CFG.maxMist){beep(300,.2,'triangle');setTimeout(()=>beep(250,.3,'triangle'),180);
+    return modal(`<div style="font-size:90px">🐢💨</div><div style="font-size:44px">!וָואוּ, מַהֵר מִדַּי</div><div style="font-size:34px">בּוֹא נִקְרָא שׁוּב לְאַט וּבְזְהִירוּת</div><div style="font-size:26px;color:#888">⏱ ${t.toFixed(1)} · ✗ ${R.mist}</div><br><button class="big" id="rtB">🔁 עוֹד פַּעַם</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`),$('rtB').onclick=()=>{closeModal();speedStart(R.i)}}
+  const spm=Math.round(p.syl/(t/60)),acc=Math.max(0,1-R.mist/Math.max(10,p.syl/10));
+  const st=stars({kind:p.kind},spm,R.mist===0?1:acc);const prev=S.speed[p.key];const rec=!prev||t<prev.time;
+  const coins=Math.round(p.syl/10)+st*10+(rec&&prev?25:0);S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
+  S.runs.push({id:p.key,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1),speed:1});
+  S.speed[p.key]={time:rec?t:prev.time,stars:Math.max(st,prev?prev.stars:0),spm:Math.max(spm,prev?prev.spm:0),runs:(prev?prev.runs:0)+1};save();
+  confetti(rec);if(rec&&prev)setTimeout(()=>confetti(true),700);
+  const bt=prev?prev.time:t,mx=Math.max(t,bt);
+  modal(`${rec&&prev?'<div class="banner">🏆 !שִׂיא חָדָשׁ</div>':''}<div style="font-size:80px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>
+   <div style="font-size:64px;font-weight:bold">⏱ ${t.toFixed(1)}</div>
+   <div class="cmp"><div>אַתָּה ${S.char}</div><div class="bar"><span style="width:${t/mx*100}%;background:#2bd66b"></span></div><div>${t.toFixed(1)}</div>
+   <div>הַשִּׂיא 👻</div><div class="bar"><span style="width:${bt/mx*100}%;background:#bbb"></span></div><div>${bt.toFixed(1)}</div></div>
+   <div style="font-size:30px">🚀 ${spm} הֲבָרוֹת לְדַקָּה · ✗ ${R.mist} · 🪙 +${coins}</div>
+   ${prev&&!rec?`<div style="font-size:26px">!עוֹד ${(t-prev.time).toFixed(1)} שְׁנִיּוֹת לַשִּׂיא — אַתָּה יָכוֹל</div>`:''}<br>
+   <button class="big" id="agB">🔁 שׁוּב</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`);
+  $('agB').onclick=()=>{closeModal();speedStart(R.i)};
+};
+if(location.hash==='#seed2'){S.speed={pg3:{time:24.3,stars:3,spm:80},pg4:{time:28.1,stars:2,spm:70}};S.coins=210;renderMap()}
+if(/^#spdemo=/.test(location.hash)){const [i,ph]=location.hash.slice(8).split(',');S.unlockAll=true;S.speed[SP[+i].key]={time:40,stars:2,spm:60};speedStart(+i);
+  if(ph!=='start'){R.running=true;R.t0=performance.now()-23400;R.mist=1;$('spMist').textContent='✗ 1';$('spGo').style.display='none';$('spStop').style.visibility='visible';document.head.insertAdjacentHTML('beforeend','<style>*{transition:none!important;animation:none!important}</style>');spTick();
+    if(ph==='end')setTimeout(()=>$('spStop').onclick(),300)}}
+
+renderMap();
