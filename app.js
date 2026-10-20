@@ -355,3 +355,36 @@ function flyAt(el,txt){const d=document.createElement('div');d.className='fly';d
 function comboFx(t){const d=document.createElement('div');d.className='combo';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),900);[660,880,1100].forEach((n,k)=>setTimeout(()=>beep(n,.12,'square',.07),k*70))}
 function fanfare(){[523,659,784,1046,784,1046,1318].forEach((n,k)=>setTimeout(()=>beep(n,.18,'triangle',.18),k*120))}
 function countUp(){document.querySelectorAll('[data-cnt]').forEach(e=>{const to=+e.dataset.cnt;delete e.dataset.cnt;let t0=performance.now();const D=1200;(function f(){const k=Math.min(1,(performance.now()-t0)/D);e.textContent='+'+Math.round(to*(1-Math.pow(1-k,3)));if(Math.floor(k*20)%3===0&&k<1)beep(1200+k*600,.03,'square',.03);if(k<1)requestAnimationFrame(f)})()})}
+// ---------- crisp SVG icon layer (replaces emoji in UI chrome) ----------
+const SV=(b,p)=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const ICONS={
+'⭐':SV(0,'<path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="#FFC53D" stroke="#F59E0B" stroke-width="1.2" stroke-linejoin="round"/>'),
+'☆':SV(0,'<path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z" fill="#E5E7F0" stroke="#CDD1E0" stroke-width="1.2" stroke-linejoin="round"/>'),
+'🪙':SV(0,'<circle cx="12" cy="12" r="9.5" fill="#FFC53D" stroke="#E59A0B" stroke-width="1.5"/><circle cx="12" cy="12" r="6" fill="none" stroke="#E59A0B" stroke-width="1.4"/><path d="M12 8.5v7" stroke="#E59A0B" stroke-width="1.8" stroke-linecap="round"/>'),
+'🔥':SV(0,'<path d="M12 2.5c1 3.5 5.5 5.5 5.5 11a5.5 5.5 0 01-11 0c0-2.6 1.4-4 2.4-5 .2 1.8 1 2.8 2 3.2-.4-3.4.3-6.6 1.1-9.2z" fill="#FF7A45"/><path d="M12 12c.9 1.6 2.6 2.4 2.6 4.6a2.6 2.6 0 01-5.2 0c0-1.5 1.3-2.6 2.6-4.6z" fill="#FFC53D"/>'),
+'🏆':SV(0,'<path d="M7 3.5h10v5a5 5 0 01-10 0z" fill="#FFC53D" stroke="#E59A0B" stroke-width="1.3"/><path d="M7 5H4v1.5a3.5 3.5 0 003.4 3.5M17 5h3v1.5a3.5 3.5 0 01-3.4 3.5" fill="none" stroke="#E59A0B" stroke-width="1.5"/><path d="M10.5 13.5h3v3h-3zM8 17h8l.6 3.5H7.4z" fill="#E59A0B"/>'),
+'🏁':SV(0,'<path d="M5 21V3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 4h14l-2.5 4.5L19 13H5z" fill="currentColor" opacity=".9"/>'),
+'🔒':SV(0,'<rect x="5" y="10.5" width="14" height="10" rx="3" fill="currentColor"/><path d="M8 10.5V8a4 4 0 018 0v2.5" fill="none" stroke="currentColor" stroke-width="2.2"/>'),
+'✖':SV(0,'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>'),
+'⏱':SV(0,'<circle cx="12" cy="13.5" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 13.5V10M10 2.8h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'),
+'🗺':SV(0,'<path d="M3.5 6l5.5-2 6 2 5.5-2v14l-5.5 2-6-2-5.5 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 4v14M15 6v14" stroke="currentColor" stroke-width="2"/>'),
+'🔁':SV(0,'<path d="M4.5 12a7.5 7.5 0 0113-5.1M19.5 12a7.5 7.5 0 01-13 5.1" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M18 3v4.5h-4.5M6 21v-4.5h4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'),
+'▶':SV(0,'<path d="M8 5.5v13a1 1 0 001.5.9l10.2-6.5a1 1 0 000-1.8L9.5 4.6A1 1 0 008 5.5z" fill="currentColor"/>'),
+'⏹':SV(0,'<rect x="5.5" y="5.5" width="13" height="13" rx="3" fill="currentColor"/>'),
+'👨':SV(0,'<circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20.5a8 8 0 0116 0z" fill="currentColor"/>'),
+'⚡':SV(0,'<path d="M13.5 2.5L5 13.5h6l-1 8 8.5-11h-6z" fill="#FFC53D" stroke="#E59A0B" stroke-width="1.2" stroke-linejoin="round"/>'),
+'🎤':SV(0,'<rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M6 11a6 6 0 0012 0M12 17v3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'),
+'🎯':SV(0,'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/>'),
+'🚀':SV(0,'<path d="M3 12h5M4 7.5h4M4 16.5h4" stroke="#A5B4FC" stroke-width="2" stroke-linecap="round"/><path d="M14.5 3L8 13h5l-1.5 8L18 11h-5z" fill="#6366F1" stroke="#4F46E5" stroke-width="1.2" stroke-linejoin="round"/>'),
+'👻':SV(0,'<path d="M5 20V11a7 7 0 0114 0v9l-2.3-1.6L14.3 20 12 18.4 9.7 20l-2.4-1.6z" fill="#9AA1BD"/><circle cx="9.5" cy="11" r="1.3" fill="#fff"/><circle cx="14.5" cy="11" r="1.3" fill="#fff"/>'),
+'👹':SV(0,'<path d="M3.5 8l4.5 4 4-7 4 7 4.5-4-2 11h-13z" fill="#FFC53D" stroke="#E59A0B" stroke-width="1.3" stroke-linejoin="round"/>'),
+'💪':SV(0,'<circle cx="12" cy="12" r="10" fill="#22C55E"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'),
+'🐢':SV(0,'<circle cx="12" cy="12" r="10" fill="#FFB020"/><path d="M12 7v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.5" fill="#fff"/>'),
+'📊':SV(0,'<path d="M5 20V12M10 20V6M15 20v-9M20 20V4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>'),
+};
+const ICRE=/⏱️|🗺️|⭐|☆|🪙|🔥|🏆|🏁|🔒|✖|⏱|🗺|🔁|▶|⏹|👨|⚡|🎤|🎯|🚀|👻|👹|💪|🐢|📊|💨/g;
+function iconify(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),hits=[];let n;
+  while(n=w.nextNode()){if(n.parentNode&&n.parentNode.closest&&n.parentNode.closest('svg,#board,#spBoard,script,style'))continue;ICRE.lastIndex=0;if(ICRE.test(n.nodeValue))hits.push(n)}
+  hits.forEach(t=>{const s=document.createElement('span');s.className='icw';s.innerHTML=t.nodeValue.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(ICRE,m=>m==='💨'?'':(ICONS[m.replace('\uFE0F','')]||m));t.replaceWith(s)})}
+new MutationObserver(ms=>{ms.forEach(m=>{if(m.type==='characterData')iconify(m.target.parentNode||document.body);else m.addedNodes.forEach(a=>{if(a.nodeType===3)iconify(a.parentNode);else if(a.nodeType===1&&a.tagName!=='svg')iconify(a)})})}).observe(document.body,{subtree:true,childList:true,characterData:true});
+iconify(document.body);

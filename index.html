@@ -1,8 +1,8 @@
 <!doctype html><html lang="en" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Reading Race"><meta name="theme-color" content="#3b1d8f">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reading Race"><meta name="theme-color" content="#F4F6FF">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Reading Race</title>
 <style>
@@ -87,6 +87,93 @@ html,body{background:radial-gradient(circle at 70% 0%,#7b4dff 0,#5b2bd6 35%,#2a8
 .ptsbig{font-size:60px;font-weight:900;color:#ff9f1c;text-shadow:0 4px 0 #b86b00}
 .pill,.card,.top>span,.cmp>div,.big{direction:ltr;unicode-bidi:isolate;white-space:nowrap}.cmp .bar{direction:rtl}
 .top{font-size:22px;gap:8px;flex-wrap:nowrap}.top .pill{padding:6px 12px}.top>span:first-child{font-size:26px}
+/* ===== v8 modern design system ===== */
+@font-face{font-family:"Nunito";src:url(nunito.woff2) format("woff2");font-weight:200 1000;font-display:swap}
+:root{--bg1:#F4F6FF;--bg2:#E9EDFF;--ink:#1E2245;--sub:#6B7194;--line:#E3E6F3;--card:#fff;--pri:#6366F1;--pri2:#4F46E5;--grn:#22C55E;--grn2:#16A34A;--cor:#FF5C7A;--cor2:#E23E5E;--amb:#FFB020;--sh:0 1px 2px rgba(30,34,69,.06),0 8px 24px rgba(30,34,69,.08);--sh2:0 2px 4px rgba(30,34,69,.08),0 16px 40px rgba(30,34,69,.14)}
+html,body{font-family:"Nunito","Heb","Arial Hebrew",system-ui,sans-serif;font-weight:700;background:radial-gradient(1200px 600px at 85% -10%,#DCD9FF 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#D6ECFF 0,transparent 60%),linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);-webkit-font-smoothing:antialiased}
+.ic{width:1.05em;height:1.05em;vertical-align:-.16em;display:inline-block;flex:none}
+.icw{display:inline-flex;align-items:center;gap:.35em}
+button{transition:transform .12s ease,box-shadow .2s ease,background .2s}
+button:active{transform:scale(.96)}
+.screen{padding:calc(env(safe-area-inset-top) + 10px) 24px 20px}
+/* top bar */
+.top{font-size:18px;gap:10px;padding:6px 0 14px;flex-wrap:nowrap}
+.top>span:first-child{font-size:24px;font-weight:900;letter-spacing:-.3px;color:var(--ink)}
+.top>span:first-child .ic{color:var(--pri)}
+.pill,.top .pill{background:var(--card);color:var(--ink);border-radius:999px;padding:9px 16px;box-shadow:var(--sh);backdrop-filter:none;font-weight:800;font-size:18px;display:inline-flex;align-items:center;gap:8px}
+#ptsP,#ptsR,#spPts{background:linear-gradient(135deg,#FFD166,#FFB020);color:#5A3A00;text-shadow:none}
+#modeB{background:var(--pri)!important;color:#fff!important;font-size:18px!important;box-shadow:0 6px 16px rgba(99,102,241,.35)}
+#parentB{color:var(--sub)!important;font-size:16px!important}
+#charB{padding:4px 12px!important}
+#charB .carsvg{width:46px;height:30px}
+/* map */
+#map{gap:18px;padding:12px 4px 40px}
+.lv,.lv.boss,.lv.lock{width:164px;height:150px;border-radius:28px;background:var(--card);color:var(--ink);box-shadow:var(--sh);font-size:20px;padding:14px 10px;gap:4px;animation:none;justify-content:center;border:2px solid transparent}
+.lv:hover{box-shadow:var(--sh2)}
+.lv b{font-size:15px;font-weight:900;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#818CF8,#6366F1);color:#fff;box-shadow:0 4px 10px rgba(99,102,241,.35);margin-bottom:4px}
+.lv.boss{border-color:#FFE1A6;background:linear-gradient(180deg,#FFF8E8,#fff)}
+.lv.boss b{background:linear-gradient(135deg,#FFD166,#FFB020);box-shadow:0 4px 10px rgba(255,176,32,.4)}
+.lv.lock{background:#EEF0F8;color:#A3A8C3;box-shadow:none;opacity:1}
+.lv.lock b{background:#DDE0EE;color:#A3A8C3;box-shadow:none}
+.lv:not(.lock):not(:has(.st .ic)){border-color:#C7C9FF;animation:breath 2.4s ease-in-out infinite}
+@keyframes breath{50%{box-shadow:0 0 0 6px rgba(99,102,241,.14),var(--sh2)}}
+.lv .st{font-size:18px;letter-spacing:0;min-height:20px}
+.lv .rec{font-size:13px;color:var(--sub);background:#F2F3FA;border-radius:999px;padding:2px 10px;margin-top:2px;direction:ltr}
+/* play */
+#hud{gap:10px;font-size:20px;padding-bottom:10px}
+#hud .pill{font-size:20px}
+#mic{font-size:22px;color:var(--pri)}
+#title,#spTitle{color:var(--ink);font-weight:800;font-size:24px!important}
+#track,#spTrack{height:34px;background:#fff;box-shadow:inset 0 2px 4px rgba(30,34,69,.08);border-radius:999px;margin:4px 0 12px;background-image:repeating-linear-gradient(90deg,transparent 0 18px,#EEF0F8 18px 30px);background-size:100% 4px;background-repeat:no-repeat;background-position:0 50%}
+#track .fin,#spTrack .fin{left:10px;top:4px;font-size:22px;color:var(--ink)}
+.car{top:-1px}
+.car.ghost{opacity:.3}
+#board,#spBoard{border-radius:28px;box-shadow:var(--sh);background:#fff}
+#board.pg{padding:8px}
+#count{background:rgba(30,34,69,.35);backdrop-filter:blur(6px);font-size:220px;font-weight:900;color:#fff;text-shadow:0 10px 40px rgba(99,102,241,.6)}
+#ovr,#ovx{background:#fff;color:#C3C7DA;box-shadow:var(--sh);font-size:22px}
+/* speed run */
+#spTimer{background:#fff;color:var(--ink);box-shadow:var(--sh2);font-size:46px;font-weight:900;padding:2px 30px;border-radius:22px;letter-spacing:-1px;top:calc(env(safe-area-inset-top) + 8px)}
+#spTimer.behind{color:var(--cor)}
+#spGo{width:280px;height:280px;background:radial-gradient(circle at 35% 30%,#4ADE80,#22C55E 55%,#16A34A);box-shadow:0 20px 50px rgba(34,197,94,.45),0 0 0 14px rgba(34,197,94,.15),0 0 0 30px rgba(34,197,94,.07);font-size:86px;gap:2px;animation:pulse 1.8s ease-in-out infinite}
+#spGo span{font-size:34px;font-weight:900;letter-spacing:2px}
+@keyframes pulse{50%{transform:scale(1.05);box-shadow:0 24px 60px rgba(34,197,94,.5),0 0 0 22px rgba(34,197,94,.12),0 0 0 44px rgba(34,197,94,.05)}}
+#spBar{height:110px;gap:16px}
+#spStop{width:360px;height:96px;border-radius:30px;background:linear-gradient(180deg,#FF7A93,#FF5C7A);box-shadow:0 12px 30px rgba(255,92,122,.4);font-size:44px;gap:14px}
+#spStop span{font-size:36px;font-weight:900;letter-spacing:1px}
+#spX{width:170px;height:96px;border-radius:30px;background:#fff;color:var(--cor);box-shadow:var(--sh);font-size:38px;font-weight:900}
+/* modal & cards */
+.modal{background:rgba(30,34,69,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.card{border-radius:36px;padding:34px 44px;color:var(--ink);box-shadow:0 30px 80px rgba(30,34,69,.35);font-size:24px;animation:cardin .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes cardin{from{transform:translateY(30px) scale(.92);opacity:0}}
+.banner{background:linear-gradient(135deg,#FFD166,#FFB020);color:#5A3A00;text-shadow:none;font-size:30px;font-weight:900;border-radius:18px;padding:10px 22px;display:inline-block;animation:pop .6s 2}
+.big{font-size:26px;font-weight:900;padding:16px 34px;border-radius:20px;background:linear-gradient(180deg,#34D399,#22C55E);box-shadow:0 10px 24px rgba(34,197,94,.35);display:inline-flex;align-items:center;gap:10px}
+.big[style*="5b2bd6"]{background:linear-gradient(180deg,#818CF8,#6366F1)!important;box-shadow:0 10px 24px rgba(99,102,241,.35)!important}
+.big[style*="ff9f1c"]{background:linear-gradient(180deg,#FFC24D,#FFB020)!important;box-shadow:0 10px 24px rgba(255,176,32,.35)!important}
+.ptsbig{color:var(--pri);text-shadow:none;font-size:56px;letter-spacing:-1px}
+.cmp{font-size:18px;color:var(--sub);gap:10px 14px}
+.cmp .bar{background:#F0F1F8;height:14px}
+.cmp .bar span[style*="2bd66b"]{background:linear-gradient(90deg,#34D399,#22C55E)!important}
+.cmp .bar span[style*="bbb"]{background:#C9CEDD!important}
+.cmp .carsvg{width:36px;height:24px;display:inline-block;vertical-align:middle}
+.chars{gap:14px;margin:18px 0}.chars button{font-size:44px;background:#F4F5FB;border-radius:22px;padding:14px 18px;min-width:110px;border:2px solid transparent;color:var(--ink)}
+.chars button.sel{background:#EEF0FF;border-color:var(--pri);box-shadow:0 8px 20px rgba(99,102,241,.25)}
+.chars button div{font-size:15px!important;color:var(--sub);margin-top:4px}
+.chars .carsvg{width:72px;height:46px;margin:auto}
+#ch{background:#F7F8FD;border-radius:20px;width:100%}
+.card input[type=range]{accent-color:var(--pri);vertical-align:middle}
+.card select,.card input:not([type]){font:inherit;font-size:16px;border:1px solid var(--line);border-radius:12px;padding:6px 10px;background:#fff}
+.fly{color:var(--pri);text-shadow:0 2px 0 #fff,0 6px 16px rgba(99,102,241,.4);font-weight:900}
+.combo{color:#fff;-webkit-text-stroke:0;background:linear-gradient(135deg,#818CF8,#6366F1);border-radius:28px;padding:10px 30px;font-size:56px;box-shadow:0 20px 50px rgba(99,102,241,.5)}
+.lv,.lv:not(.lock):not(.done1){animation:none!important}
+.lv:not(.lock):not(:has(.st .ic)){animation:breath 2.4s ease-in-out infinite!important}
+#hud .pill[onclick],#spQuit{color:var(--sub)!important;width:48px;height:48px;padding:0!important;justify-content:center}
+.cmp .ic{width:22px;height:22px}
+.lv,.lv.boss,.lv.lock{width:196px;height:172px;font-size:22px}
+#map{gap:20px;padding-top:18px}
+.lv.lock{color:#8E93B0;background:rgba(255,255,255,.55);border-color:transparent!important}
+.lv.lock b{background:#E6E8F3;color:#9BA0BC}
+#map::before{content:"Pick a level and race!";flex-basis:100%;text-align:center;font-family:Nunito;font-weight:900;font-size:20px;color:var(--sub);margin-bottom:2px;direction:ltr}
 </style></head><body>
 <div id="sMap" class="screen on">
  <div class="top"><span>🏁 Reading Race</span><span class="sp"></span><span class="pill" id="streakP">🔥 0</span><span class="pill" id="coinsP">🪙 0</span><span class="pill" id="ptsP">⭐ 0 pts</span>
