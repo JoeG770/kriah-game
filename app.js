@@ -10,7 +10,7 @@ const CHARS=[['🚗',0],['🚀',50],['🦄',120],['🐉',250],['🏎️',400],['
 // ---------- phonetics ----------
 const NIK=/[\u0591-\u05C7]/g;
 const FIN={'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
-const FOLD={'ע':'א','ח':'כ','ק':'כ','ט':'ת','ש':'ס','ו':'ב','ה':'א'};
+const FOLD={'ע':'א','ח':'כ','ק':'כ','ט':'ס','ת':'ס','ש':'ס','ו':'ב','ה':'א'}; // Ashkenazi: sav=s, ches/chof=k
 function plain(s){return s.replace(NIK,'').replace(/[^\u05D0-\u05EA]/g,'').replace(/[ךםןףץ]/g,c=>FIN[c])}
 function fold(s){return plain(s).split('').map(c=>FOLD[c]||c).join('')}
 function vclass(unit){ // vowel class of a pointed syllable
@@ -36,18 +36,21 @@ function latin(tok){ // recognizer sometimes answers in latin: "da", "dee"
   const c=m[1]==='sh'?'ס':m[1]==='ch'?'כ':m[1]==='ts'?'צ':(LAT[m[1]]||'');
   const v=m[2][0]; return {c:fold(c),v:!v?['a','e','i','o','u']:v==='a'?['a']:v==='e'?['e','i']:v==='i'||v==='y'?['i']:v==='o'?['o','u']:['u','o']};
 }
+// Chasidish/Ashkenazi vowel tolerance: kamatz~u/o/a, cholam~oy/ey, shuruk/kubutz~i, tzeirei~ay
+function ashV(u){if(/\u05B8|\u05B3/.test(u))return['a','o','u'];if(/\u05B9|\u05D5\u05B9/.test(u))return['o','e','i','u'];if(/\u05D5\u05BC|\u05BB/.test(u))return['u','i'];if(/\u05B5/.test(u))return['e','i','a'];if(/\u05B6/.test(u))return['e','a'];if(/\u05B4/.test(u))return['i','e'];if(/\u05B7|\u05B2/.test(u))return['a'];return['a','e','i','o','u']}
 function lev(a,b){const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return d[b.length]}
 function matchUnit(lvl,i,tok){
   if(lvl.kind==='letters'){const a=fold(lvl.say[i]),b=fold(tok);return b.length&&lev(a,b)<=Math.max(1,Math.floor(a.length/2))||fold(lvl.units[i])===b[0]&&b.length>=2&&lev(a,b)<=2}
   if(lvl.kind==='syllables'){
     const u=lvl.units[i],c=fold(u[0]),v=vclass(u);const la=/[a-z]/i.test(tok)?latin(tok):null;
-    if(la)return la.c===c&&(!v||la.v.includes(v));
+    if(la)return la.c===c&&(!v||la.v.some(h=>ashV(u).includes(h)));
     const f=fold(tok);if(!f)return false;
     if(f[0]!==c&&!(c==='א'&&'אי'.includes(f[0])))return false; // first consonant must match (folded)
-    return !v||heardV(tok).includes(v)||plain(tok).length===1;
+    return !v||heardV(tok).some(h=>ashV(u).includes(h))||plain(tok).length===1;
   }
   const a=fold(lvl.words[i].w),b=fold(tok);if(!b)return false;
-  return lev(a,b)<=Math.max(1,Math.round(a.length*0.4));
+  const sk=x=>x.replace(/[איב]/g,''); // consonant skeleton: drop vowel letters (Ashkenazi oy/ay/ee add י/ו)
+  return lev(a,b)<=Math.max(1,Math.round(a.length*0.4))||lev(sk(a),sk(b))<=Math.max(1,Math.round(sk(a).length*0.34));
 }
 // ---------- game state ----------
 let G=null;
@@ -67,7 +70,7 @@ function renderMap(){
 }
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
 function start(i,practice){
-  const l=practice||L[i];
+  const l=practice||L[i];loadVoice(l.page||(G&&G.l&&G.l.page));
   G={l,i,pos:0,miss:0,missHere:0,streak:0,maxStreak:0,coins:0,helped:[],times:[],t0:0,last:0,running:false,practice:!!practice,heardIdx:0};
   show('sPlay');$('title').textContent=l.title;
   const b=$('board');
@@ -196,7 +199,7 @@ function stopClip(span){
 }
 async function verify(blob,exp,span){
   try{
-    const fd=new FormData();fd.append('audio',blob,'a.wav');fd.append('expected',exp.join(' '));
+    const fd=new FormData();fd.append('audio',blob,'a.wav');fd.append('expected',exp.join(' '));if(window.translit)fd.append('translit',translit(exp.join(' ')));
     const res=await fetch(CFG.proxy,{method:'POST',body:fd});if(!res.ok)return;const j=await res.json();
     const toks=(j.text||'').replace(/[.,:!?]/g,'').trim().split(/\s+/).filter(Boolean);if(!toks.length)return;
     let ok=0;for(let k=span.from;k<span.to;k++){if(toks.some(t=>matchUnit(G.l,k,t))||toks.join('')&&matchUnit(G.l,k,toks.join('')))ok++}
@@ -214,11 +217,19 @@ function webSpeech(){
   rec.onend=()=>{rec=null}; // no auto-restart: restarting is what re-triggers Safari's prompt
   try{rec.start()}catch(e){}
 }
+// heimish Chasidish voice: pre-generated clips per page (voice-pN.json), Hebrew TTS only as fallback
+const VOICE={};function vkey(s){return s.replace(/[^\u05D0-\u05EA\u05B0-\u05C7]/g,'')}
+function loadVoice(p){if(!p||VOICE[p])return;VOICE[p]=fetch('voice-p'+p+'.json').then(r=>r.ok?r.json():{}).catch(()=>({}))}
+async function playClip(t){const p=G&&G.l&&G.l.page;if(!p||!VOICE[p])return false;const m=await VOICE[p];const b=m[vkey(t)];if(!b)return false;
+  const a=ac();if(a.state==='suspended')await a.resume();const bin=Uint8Array.from(atob(b),c=>c.charCodeAt(0));const buf=await a.decodeAudioData(bin.buffer);
+  return new Promise(res=>{const s=a.createBufferSource();s.buffer=buf;s.connect(a.destination);s.onended=()=>res(true);s.start()})}
 function say(t,cb){
-  const ss=window.speechSynthesis;if(!ss){cb&&cb();return}
+  speaking=true;V.on=false;let done=false;const fin=()=>{if(done)return;done=true;setTimeout(()=>{speaking=false;V.acc=0},350);cb&&cb()};
+  playClip(t).then(ok=>{if(ok)fin();else sayTTS(t,cb,fin)}).catch(()=>sayTTS(t,cb,fin));setTimeout(fin,6000)}
+function sayTTS(t,cb,fin){
+  const ss=window.speechSynthesis;if(!ss){fin();return}
   speaking=true;V.on=false;
   const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';u.rate=.7;const v=ss.getVoices().find(v=>/he/i.test(v.lang));if(v)u.voice=v;
-  let done=false;const fin=()=>{if(done)return;done=true;setTimeout(()=>{speaking=false;V.acc=0},350);cb&&cb()};
   u.onend=u.onerror=fin;ss.cancel();ss.speak(u);setTimeout(fin,4000);
 }
 // ---------- sounds ----------
@@ -242,7 +253,7 @@ function finish(){
    ${helped.length?`<button class="big" style="background:#ff9f1c;box-shadow:0 8px 0 #b86b00" id="prB">🎯 Quick practice (${helped.length})</button><br><br>`:''}
    <button class="big" id="agB">🔁 Again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️ Map</button>`);countUp();
   const i=G.i;$('agB').onclick=()=>{closeModal();start(i)};
-  if(helped.length)$('prB').onclick=()=>{closeModal();const k=l.kind;start(i,k==='words'?{id:'pr',title:'🎯 Practice',kind:'words',words:helped.map(h=>h.u)}:{id:'pr',title:'🎯 Practice',kind:k,units:helped.map(h=>k==='letters'?l.units[l.say.indexOf(h.t)]:h.u),say:helped.map(h=>h.t)})};
+  if(helped.length)$('prB').onclick=()=>{closeModal();const k=l.kind;start(i,k==='words'?{id:'pr',page:l.page,title:'🎯 Practice',kind:'words',words:helped.map(h=>h.u)}:{id:'pr',page:l.page,title:'🎯 Practice',kind:k,units:helped.map(h=>k==='letters'?l.units[l.say.indexOf(h.t)]:h.u),say:helped.map(h=>h.t)})};
 }
 function quit(){if(G){G.running=false}stopListen();speechSynthesis&&speechSynthesis.cancel();toMap()}
 function toMap(){show('sMap');renderMap()}
@@ -383,7 +394,7 @@ const ICONS={
 '📊':SV(0,'<path d="M5 20V12M10 20V6M15 20v-9M20 20V4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>'),
 };
 const ICRE=/⏱️|🗺️|⭐|☆|🪙|🔥|🏆|🏁|🔒|✖|⏱|🗺|🔁|▶|⏹|👨|⚡|🎤|🎯|🚀|👻|👹|💪|🐢|📊|💨/g;
-function iconify(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),hits=[];let n;
+function iconify(root){if(!root||!root.nodeType)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),hits=[];let n;
   while(n=w.nextNode()){if(n.parentNode&&n.parentNode.closest&&n.parentNode.closest('svg,#board,#spBoard,script,style'))continue;ICRE.lastIndex=0;if(ICRE.test(n.nodeValue))hits.push(n)}
   hits.forEach(t=>{const s=document.createElement('span');s.className='icw';s.innerHTML=t.nodeValue.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(ICRE,m=>m==='💨'?'':(ICONS[m.replace('\uFE0F','')]||m));t.replaceWith(s)})}
 new MutationObserver(ms=>{ms.forEach(m=>{if(m.type==='characterData')iconify(m.target.parentNode||document.body);else m.addedNodes.forEach(a=>{if(a.nodeType===3)iconify(a.parentNode);else if(a.nodeType===1&&a.tagName!=='svg')iconify(a)})})}).observe(document.body,{subtree:true,childList:true,characterData:true});
