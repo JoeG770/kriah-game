@@ -2,8 +2,10 @@
 const $=id=>document.getElementById(id);
 const L=window.LEVELS;
 const KEY='kriah-save-v1';
-const S=Object.assign({coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false,speed:{},mode:'speed'},JSON.parse(localStorage.getItem(KEY)||'{}'));
+const S=Object.assign({points:0,coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false,speed:{},mode:'speed'},JSON.parse(localStorage.getItem(KEY)||'{}'));
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const CARSVG=`<svg class="carsvg" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 26 Q4 18 12 17 L20 8 Q23 5 28 5 L44 5 Q50 5 53 10 L58 17 Q62 18 62 24 L62 29 Q62 31 60 31 L6 31 Q4 31 4 29Z" fill="#e63946" stroke="#a4161a" stroke-width="1.5"/><path d="M22 10 Q24 8 28 8 L34 8 L34 17 L15 17Z M37 8 L44 8 Q48 8 50 11 L54 17 L37 17Z" fill="#bfe9ff"/><rect x="4" y="21" width="5" height="4" rx="2" fill="#ffe066"/><circle cx="17" cy="31" r="7" fill="#222"/><circle cx="17" cy="31" r="3" fill="#ccc"/><circle cx="49" cy="31" r="7" fill="#222"/><circle cx="49" cy="31" r="3" fill="#ccc"/></svg>`;
+const icon=c=>c==='🚗'?CARSVG:c;
 const CHARS=[['🚗',0],['🚀',50],['🦄',120],['🐉',250],['🏎️',400],['🦖',600],['🛸',800],['🐎',1000]];
 // ---------- phonetics ----------
 const NIK=/[\u0591-\u05C7]/g;
@@ -20,7 +22,7 @@ function vclass(unit){ // vowel class of a pointed syllable
   if(/\u05B0/.test(unit))return 'e';
   return '';
 }
-const VNAME={a:'קָמָץ / פַּתָּח',e:'צֵירֵי / סֶגּוֹל / שְׁוָא',i:'חִירִיק',o:'חוֹלָם',u:'שׁוּרוּק / קֻבּוּץ'};
+const VNAME={a:'kamatz / patach (a)',e:'tzere / segol / sheva (e)',i:'chirik (i)',o:'cholam (o)',u:'shuruk / kubutz (u)'};
 function heardV(tok){ // guess vowel classes from an unpointed transcript token (lenient sets)
   const r=plain(tok).slice(1);
   if(!r||/^[אה]+$/.test(r))return ['a','e'];
@@ -56,9 +58,9 @@ function unlocked(i){return S.unlockAll||i===0||(S.best[L[i-1].id]||{}).stars>=1
 function today(){return new Date().toLocaleDateString('en-CA')}
 function dayStreak(){let n=0,d=new Date();const set=new Set(S.days);while(set.has(d.toLocaleDateString('en-CA'))){n++;d.setDate(d.getDate()-1)}return n}
 function renderMap(){
-  $('modeB').innerHTML=S.mode==='speed'?'🏁 מֵרוֹץ':'🎯 אִימּוּן';
-  if(S.mode==='speed')return renderSpeedMap();
-  $('coinsP').textContent='🪙 '+S.coins;$('streakP').textContent='🔥 '+dayStreak()+' יָמִים';$('charB').textContent=S.char;
+  $('modeB').innerHTML=S.mode==='speed'?'🏁 Speed Run':'🎯 Practice';
+  if(S.mode==='speed'){$('coinsP').textContent='🪙 '+S.coins;$('ptsP').textContent='⭐ '+S.points+' pts';$('streakP').textContent='🔥 '+dayStreak()+' days';$('charB').innerHTML=icon(S.char);return renderSpeedMap()}
+  $('coinsP').textContent='🪙 '+S.coins;$('ptsP').textContent='⭐ '+S.points+' pts';$('streakP').textContent='🔥 '+dayStreak()+' days';$('charB').innerHTML=icon(S.char);
   $('map').innerHTML=L.map((l,i)=>{const b=S.best[l.id];const lk=!unlocked(i);
     return `<button class="lv ${l.boss?'boss':''} ${lk?'lock':''}" data-i="${i}"><b>${lk?'🔒':l.boss?'👹':i+1}</b>${l.title}<span class="st">${b?'⭐'.repeat(b.stars)+'☆'.repeat(3-b.stars):''}</span></button>`}).join('');
   $('map').querySelectorAll('.lv').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(unlocked(i))start(i)});
@@ -78,8 +80,8 @@ function start(i,practice){
   b.innerHTML=units(l).map((u,k)=>l.kind==='words'?`<span class="u" id="u${k}">${u.syl.map(s=>`<span class="s">${s}</span>`).join('')}</span>`:`<span class="u" id="u${k}">${u}</span>`).join('');
   }
   const tr=$('track');tr.querySelectorAll('.car').forEach(c=>c.remove());
-  G.car=document.createElement('span');G.car.className='car';G.car.textContent=S.char;tr.appendChild(G.car);
-  const best=!practice&&S.best[l.id];if(best&&best.times){G.ghostT=best.times;G.ghost=document.createElement('span');G.ghost.className='car ghost';G.ghost.textContent=S.char;tr.appendChild(G.ghost)}
+  G.car=document.createElement('span');G.car.className='car';G.car.innerHTML=icon(S.char);tr.appendChild(G.car);
+  const best=!practice&&S.best[l.id];if(best&&best.times){G.ghostT=best.times;G.ghost=document.createElement('span');G.ghost.className='car ghost';G.ghost.innerHTML=icon(S.char);tr.appendChild(G.ghost)}
   moveCar(G.car,0);if(G.ghost)moveCar(G.ghost,0);hud();
   const go=()=>countdown(()=>{G.t0=performance.now();G.last=G.t0;G.running=true;V.acc=0;highlight();listen();tick()});
   if(CFG.mode==='webspeech'||/#demo/.test(location.hash))go();else ensureMic().then(go);
@@ -87,8 +89,8 @@ function start(i,practice){
 function fitPage(l){const b=$('board'),p=$('page');const H=b.clientHeight-8,W=b.clientWidth-8;
   if(l.kind!=='words'||H*l.aspect>=W*0.6)p.style.width=Math.min(W,H*l.aspect)+'px';else p.style.width=W+'px'}
 function moveCar(el,k){const n=units(G.l).length;const w=$('track').clientWidth-44;el.style.right=(k/n*w)+'px'}
-function countdown(cb){const c=$('count');c.style.display='flex';let n=3;const step=()=>{if(n===0){c.textContent='!יַאלְלָה';beep(880,.2);setTimeout(()=>{c.style.display='none';cb()},500);return}c.textContent=n;beep(440,.15);n--;setTimeout(step,800)};step()}
-function hud(){$('streak').textContent='⚡ '+G.streak;$('coinsR').textContent='🪙 '+G.coins;G.car.classList.toggle('turbo',G.streak>=5)}
+function countdown(cb){const c=$('count');c.style.display='flex';let n=3;const step=()=>{if(n===0){c.textContent='GO!';beep(880,.2);setTimeout(()=>{c.style.display='none';cb()},500);return}c.textContent=n;beep(440,.15);n--;setTimeout(step,800)};step()}
+function hud(){$('streak').textContent='⚡ '+G.streak;$('coinsR').textContent='🪙 '+G.coins;$('ptsR').textContent='⭐ '+(G.pts||0);G.car.classList.toggle('turbo',G.streak>=5)}
 function highlight(){document.querySelectorAll('.u,.bx').forEach((e,k)=>{e.classList.toggle('cur',k===G.pos);e.classList.toggle('done',k<G.pos)});
   const e=$('u'+G.pos);if(e){e.scrollIntoView({block:'center',behavior:'smooth'});}}
 function tick(){if(!G||!G.running)return;const now=performance.now(),t=(now-G.t0)/1000;$('timer').textContent='⏱ '+t.toFixed(1);
@@ -98,7 +100,7 @@ function tick(){if(!G||!G.running)return;const now=performance.now(),t=(now-G.t0
 function advance(byParent){
   if(!G.running)return;const e=$('u'+G.pos);if(e)e.classList.remove('help');
   G.times.push((performance.now()-G.t0)/1000);G.pos++;G.last=performance.now();G.missHere=0;G.helping=false;
-  G.streak++;G.maxStreak=Math.max(G.maxStreak,G.streak);G.coins+=G.streak>=5?2:1;
+  G.streak++;G.maxStreak=Math.max(G.maxStreak,G.streak);G.coins+=G.streak>=5?2:1;{const gain=10+Math.min(G.streak,20)*2+((performance.now()-G.last)<1500?5:0);G.pts=(G.pts||0)+gain;flyAt($('u'+G.pos),'+'+gain);if(G.streak&&G.streak%5===0){comboFx('COMBO x'+G.streak+'!');G.pts+=25}}
   moveCar(G.car,G.pos);whoosh(G.streak>=5);hud();
   if(G.pos>=units(G.l).length)return finish();highlight();
 }
@@ -127,7 +129,7 @@ const RING={sr:48000,buf:null,w:0};let MIC=null,AN=null,BUF=null,speaking=false,
 async function ensureMic(){
   if(MIC&&MIC.getAudioTracks().some(t=>t.readyState==='live'))return true;
   try{MIC=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
-  catch(e){$('mic').textContent='🚫';return false}
+  catch(e){$('mic').textContent='🚫 no mic';return false}
   const a=ac();if(a.state==='suspended')await a.resume();
   const src=a.createMediaStreamSource(MIC);AN=a.createAnalyser();AN.fftSize=1024;BUF=new Float32Array(AN.fftSize);src.connect(AN);
   // rolling PCM buffer (last 12 s) so each utterance can be cut out with pre-roll and sent as WAV
@@ -228,47 +230,47 @@ function boop(){beep(180,.25,'square',.08)}
 function finish(){
   G.running=false;stopListen();const l=G.l,n=units(l).length,t=G.times[n-1]||1;
   const spm=Math.round(syllCount(l,n)/(t/60)),acc=Math.max(0,1-(G.miss+G.helped.length)/n);
-  if(G.practice){S.coins+=G.coins;save();confetti();modal(`<div style="font-size:70px">💪</div>כׇּל הַכָּבוֹד! סִיַּמְתָּ אֶת הָאִימּוּן<br>🪙 +${G.coins}<br><br><button class="big" onclick="closeModal();toMap()">לַמַּפָּה</button>`);return}
+  if(G.practice){S.coins+=G.coins;S.points+=G.pts||0;save();confetti();modal(`<div style="font-size:70px">💪</div>Great job! Practice complete<br>🪙 +${G.coins} · <span class="ptsbig" data-cnt="${G.pts||0}">0</span> pts<br><br><button class="big" onclick="closeModal();toMap()">לַמַּפָּה</button>`);return}
   const st=stars(l,spm,acc);const prev=S.best[l.id];const rec_=!prev||t<prev.time;
-  S.coins+=G.coins+st*10;if(!S.days.includes(today()))S.days.push(today());
+  G.pts=(G.pts||0)+st*100+(rec_&&prev?500:0);S.points+=G.pts;S.coins+=G.coins+st*10;if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:l.id,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1)});
   if(!prev||st>prev.stars||rec_)S.best[l.id]={stars:Math.max(st,prev?prev.stars:0),time:rec_?t:prev.time,times:rec_?G.times:prev.times,spm:Math.max(spm,prev?prev.spm:0)};
   save();confetti(st===3||rec_);
   const helped=G.helped.slice();
-  modal(`<div style="font-size:80px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>${rec_?'<div style="font-size:50px">🏆 !שִׂיא חָדָשׁ</div>':''}
-   ⏱ ${t.toFixed(1)} שְׁנִיּוֹת &nbsp; 🚀 ${spm} הֲבָרוֹת לְדַקָּה<br>⚡ רֶצֶף: ${G.maxStreak} &nbsp; 🪙 +${G.coins+st*10}<br><br>
-   ${helped.length?`<button class="big" style="background:#ff9f1c;box-shadow:0 8px 0 #b86b00" id="prB">🎯 אִימּוּן קָצָר (${helped.length})</button><br><br>`:''}
-   <button class="big" id="agB">🔁 שׁוּב</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`);
+  modal(`<div style="font-size:80px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>${rec_?'<div style="font-size:50px">🏆 NEW RECORD!</div>':''}
+   <div class="ptsbig" data-cnt="${G.pts}">0</div>points!<br>⏱ ${t.toFixed(1)} sec &nbsp; 🚀 ${spm} syllables/min<br>⚡ Best combo: ${G.maxStreak} &nbsp; 🪙 +${G.coins+st*10}<br><br>
+   ${helped.length?`<button class="big" style="background:#ff9f1c;box-shadow:0 8px 0 #b86b00" id="prB">🎯 Quick practice (${helped.length})</button><br><br>`:''}
+   <button class="big" id="agB">🔁 Again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️ Map</button>`);countUp();
   const i=G.i;$('agB').onclick=()=>{closeModal();start(i)};
-  if(helped.length)$('prB').onclick=()=>{closeModal();const k=l.kind;start(i,k==='words'?{id:'pr',title:'🎯 אִימּוּן',kind:'words',words:helped.map(h=>h.u)}:{id:'pr',title:'🎯 אִימּוּן',kind:k,units:helped.map(h=>k==='letters'?l.units[l.say.indexOf(h.t)]:h.u),say:helped.map(h=>h.t)})};
+  if(helped.length)$('prB').onclick=()=>{closeModal();const k=l.kind;start(i,k==='words'?{id:'pr',title:'🎯 Practice',kind:'words',words:helped.map(h=>h.u)}:{id:'pr',title:'🎯 Practice',kind:k,units:helped.map(h=>k==='letters'?l.units[l.say.indexOf(h.t)]:h.u),say:helped.map(h=>h.t)})};
 }
 function quit(){if(G){G.running=false}stopListen();speechSynthesis&&speechSynthesis.cancel();toMap()}
 function toMap(){show('sMap');renderMap()}
-function modal(h){$('card').innerHTML=h;$('modal').style.display='flex'}
+function modal(h){$('card').innerHTML=h;$('modal').style.display='flex';countUp()}
 function closeModal(){$('modal').style.display='none'}
 // parent override: tap = accept current, long press = mark wrong
 $('ovr').onclick=()=>advance(true);
 $('ovx').onclick=()=>{if(!G||!G.running)return;if(G.pos>0&&performance.now()-G.last<4000)rollback(G.pos-1);else wrong()};
 // characters
-function openChars(){modal(`<div>בְּחַר דְּמוּת 🪙 ${S.coins}</div><div class="chars">${CHARS.map(([c,p])=>`<button class="${S.char===c?'sel':''}" data-c="${c}" data-p="${p}">${c}<div style="font-size:22px">${S.owned.includes(c)?'✓':'🪙'+p}</div></button>`).join('')}</div><br><button class="big" onclick="closeModal();renderMap()">סְגוֹר</button>`);
+function openChars(){modal(`<div>Pick a racer 🪙 ${S.coins}</div><div class="chars">${CHARS.map(([c,p])=>`<button class="${S.char===c?'sel':''}" data-c="${c}" data-p="${p}">${icon(c)}<div style="font-size:22px">${S.owned.includes(c)?'✓':'🪙'+p}</div></button>`).join('')}</div><br><button class="big" onclick="closeModal();renderMap()">Close</button>`);
   document.querySelectorAll('.chars button').forEach(b=>b.onclick=()=>{const c=b.dataset.c,p=+b.dataset.p;if(!S.owned.includes(c)){if(S.coins<p){boop();return}S.coins-=p;S.owned.push(c);confetti()}S.char=c;save();openChars()})}
 // parent screen (hold the button 1s so the kid doesn't wander in)
 (()=>{let t;const b=$('parentB');b.addEventListener('pointerdown',()=>t=setTimeout(parent,900));b.addEventListener('pointerup',()=>clearTimeout(t))})();
 function parent(){
   const vm=Object.entries(S.vowelMiss).sort((a,b)=>b[1]-a[1]);
-  modal(`<div style="font-size:36px">📊 מָסַךְ הוֹרִים</div><canvas id="ch" width="700" height="260"></canvas>
-   <div style="font-size:24px;text-align:right">ריצות: ${S.runs.length} · ימים ברצף: ${dayStreak()}<br><b>ניקוד שמתקשה בו:</b> ${vm.length?vm.map(([v,n])=>VNAME[v]+' ('+n+')').join(' · '):'—'}<br>
-   <b>שיאים:</b> ${L.filter(l=>S.best[l.id]).map(l=>l.title+': '+S.best[l.id].spm+' הב/דק').join(' · ')||'—'}</div>
-   <label style="font-size:24px"><input type="checkbox" id="ua" ${S.unlockAll?'checked':''}> פתח את כל השלבים</label><br>
-   <div style="font-size:18px;color:#666">✓ / ✗ בפינה השמאלית התחתונה: ✓ = נכון (קדימה), ✗ = טעות (חוזר צעד אחורה)</div>
-   <div style="font-size:22px;text-align:right">מֵרוֹץ: מַקְסִימוּם טָעוּיוֹת לְשִׂיא: <b id="mmv">${CFG.maxMist}</b> <input id="mm" type="range" min="0" max="10" step="1" value="${CFG.maxMist}"></div>
-   <div style="font-size:20px;text-align:right;margin:8px 0">זיהוי (אִימּוּן): <select id="md"><option value="vad">קול (מקומי, ללא אינטרנט)</option><option value="cloud">קול + בדיקה בענן</option><option value="webspeech">Web Speech (ניסיוני)</option></select>
-   רגישות <input id="sens" type="range" min="0.5" max="2" step="0.1" value="${CFG.sens}"><br>כתובת שרת (לבדיקה בענן): <input id="px" style="width:60%" value="${CFG.proxy}" placeholder="https://...workers.dev"></div>
-   <button class="big" onclick="closeModal();renderMap()">סגור</button>`);
+  modal(`<div style="font-size:36px">📊 Parent screen</div><canvas id="ch" width="700" height="260"></canvas>
+   <div style="font-size:24px;text-align:right">Runs: ${S.runs.length} · Day streak: ${dayStreak()} · Total points: ${S.points}<br><b>Vowels he struggles with:</b> ${vm.length?vm.map(([v,n])=>VNAME[v]+' ('+n+')').join(' · '):'—'}<br>
+   <b>Records:</b> ${L.filter(l=>S.best[l.id]).map(l=>l.title+': '+S.best[l.id].spm+' syl/min').join(' · ')||'—'}</div>
+   <label style="font-size:24px"><input type="checkbox" id="ua" ${S.unlockAll?'checked':''}> Unlock all levels</label><br>
+   <div style="font-size:18px;color:#666">✓ / ✗ bottom-left corner (Practice): ✓ = correct (move ahead), ✗ = mistake (step back). In Speed Run, tap ✗ for each mistake.</div>
+   <div style="font-size:22px;text-align:right">Speed Run: max mistakes allowed: <b id="mmv">${CFG.maxMist}</b> <input id="mm" type="range" min="0" max="10" step="1" value="${CFG.maxMist}"></div>
+   <div style="font-size:20px;text-align:right;margin:8px 0">Recognition (Practice): <select id="md"><option value="vad">Voice (on-device, offline)</option><option value="cloud">Voice + cloud check</option><option value="webspeech">Web Speech (experimental)</option></select>
+   Sensitivity <input id="sens" type="range" min="0.5" max="2" step="0.1" value="${CFG.sens}"><br>Server URL (cloud check): <input id="px" style="width:60%" value="${CFG.proxy}" placeholder="https://...workers.dev"></div>
+   <button class="big" onclick="closeModal();renderMap()">Close</button>`);
   $('mm').oninput=e=>{CFG.maxMist=+e.target.value;$('mmv').textContent=CFG.maxMist;saveCfg()};
   $('md').value=CFG.mode;$('md').onchange=e=>{CFG.mode=e.target.value;saveCfg()};$('sens').oninput=e=>{CFG.sens=+e.target.value;saveCfg()};$('px').onchange=e=>{CFG.proxy=e.target.value.trim();if(CFG.proxy&&CFG.mode==='vad')CFG.mode='cloud';saveCfg()};
   $('ua').onchange=e=>{S.unlockAll=e.target.checked;save()};
-  const c=$('ch').getContext('2d'),R=S.runs.slice(-30);c.fillStyle='#3b1d8f';c.font='18px sans-serif';c.fillText('הברות לדקה (30 ריצות אחרונות)',440,22);
+  const c=$('ch').getContext('2d'),R=S.runs.slice(-30);c.fillStyle='#3b1d8f';c.font='18px sans-serif';c.fillText('Syllables per minute (last 30 runs)',380,22);
   const mx=Math.max(60,...R.map(r=>r.spm));c.strokeStyle='#5b2bd6';c.lineWidth=4;c.beginPath();
   R.forEach((r,k)=>{const x=30+k*(640/Math.max(1,R.length-1)),y=240-r.spm/mx*200;k?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();
   R.forEach((r,k)=>{const x=30+k*(640/Math.max(1,R.length-1)),y=240-r.spm/mx*200;c.fillStyle='#ff5d73';c.beginPath();c.arc(x,y,6,0,7);c.fill()});
@@ -308,12 +310,12 @@ function speedStart(i){
   $('spBoard').innerHTML=`<div class="page" id="spPage" style="aspect-ratio:${p.aspect}"><img src="${p.svg}" style="width:${100/cw}%;height:${100/ch}%;left:${-c[0]/cw*100}%;top:${-c[1]/ch*100}%"></div>`;
   const b=$('spBoard'),pg=$('spPage');const H=b.clientHeight-8,W=b.clientWidth-8;pg.style.width=(p.kind!=='words'||H*p.aspect>=W*0.6?Math.min(W,H*p.aspect):W)+'px';
   const best=S.speed[p.key];$('spBest').textContent=best?'🏆 '+best.time.toFixed(1):'🏆 —';
-  $('spGhost').style.display=best?'':'none';$('spGhost').textContent=S.char;$('spGhost').style.right='0px';
+  $('spGhost').style.display=best?'':'none';$('spGhost').innerHTML=icon(S.char);$('spPts').textContent='⭐ '+S.points;$('spGhost').style.right='0px';
   $('spTimer').textContent='0.0';$('spMist').textContent='✗ 0';$('spStop').style.visibility='hidden';$('spGo').style.display='flex';
 }
 $('spGo').onclick=()=>{$('spGo').style.display='none';ac();
   const c=$('count');c.style.display='flex';let n=3;
-  const step=()=>{if(n===0){c.textContent='!יַאלְלָה';beep(880,.25);setTimeout(()=>{c.style.display='none';R.t0=performance.now();R.running=true;$('spStop').style.visibility='visible';spTick()},450);return}
+  const step=()=>{if(n===0){c.textContent='GO!';beep(880,.25);setTimeout(()=>{c.style.display='none';R.t0=performance.now();R.running=true;$('spStop').style.visibility='visible';spTick()},450);return}
     c.textContent=n;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');beep(440+ (3-n)*80,.15);n--;setTimeout(step,800)};step()};
 function spTick(){if(!R||!R.running)return;const t=(performance.now()-R.t0)/1000;$('spTimer').textContent=t.toFixed(1);
   const best=S.speed[R.p.key];if(best){const f=Math.min(1,t/best.time);$('spGhost').style.right=(f*($('spTrack').clientWidth-50))+'px';$('spTimer').classList.toggle('behind',t>best.time)}
@@ -324,21 +326,21 @@ $('spQuit').onclick=()=>{if(R)R.running=false;toMap()};
 $('spStop').onclick=()=>{if(!R||!R.running)return;R.running=false;$('spStop').style.visibility='hidden';
   const t=(performance.now()-R.t0)/1000,p=R.p;if(t<2){toMap();return}
   if(R.mist>CFG.maxMist){beep(300,.2,'triangle');setTimeout(()=>beep(250,.3,'triangle'),180);
-    return modal(`<div style="font-size:90px">🐢💨</div><div style="font-size:44px">!וָואוּ, מַהֵר מִדַּי</div><div style="font-size:34px">בּוֹא נִקְרָא שׁוּב לְאַט וּבְזְהִירוּת</div><div style="font-size:26px;color:#888">⏱ ${t.toFixed(1)} · ✗ ${R.mist}</div><br><button class="big" id="rtB">🔁 עוֹד פַּעַם</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`),$('rtB').onclick=()=>{closeModal();speedStart(R.i)}}
+    return modal(`<div style="font-size:90px">🐢💨</div><div style="font-size:44px">Whoa, too fast!</div><div style="font-size:34px">Let's read it again, slowly and carefully</div><div style="font-size:26px;color:#888">⏱ ${t.toFixed(1)} · ✗ ${R.mist}</div><br><button class="big" id="rtB">🔁 Try again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`),$('rtB').onclick=()=>{closeModal();speedStart(R.i)}}
   const spm=Math.round(p.syl/(t/60)),acc=Math.max(0,1-R.mist/Math.max(10,p.syl/10));
   const st=stars({kind:p.kind},spm,R.mist===0?1:acc);const prev=S.speed[p.key];const rec=!prev||t<prev.time;
-  const coins=Math.round(p.syl/10)+st*10+(rec&&prev?25:0);S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
+  const coins=Math.round(p.syl/10)+st*10+(rec&&prev?25:0);const pts=p.syl*2+Math.max(0,spm-30)*3+st*100+(rec&&prev?500:0)+(R.mist===0?200:0);S.points+=pts;S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:p.key,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1),speed:1});
   S.speed[p.key]={time:rec?t:prev.time,stars:Math.max(st,prev?prev.stars:0),spm:Math.max(spm,prev?prev.spm:0),runs:(prev?prev.runs:0)+1};save();
   confetti(rec);if(rec&&prev)setTimeout(()=>confetti(true),700);
   const bt=prev?prev.time:t,mx=Math.max(t,bt);
-  modal(`${rec&&prev?'<div class="banner">🏆 !שִׂיא חָדָשׁ</div>':''}<div style="font-size:80px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>
-   <div style="font-size:64px;font-weight:bold">⏱ ${t.toFixed(1)}</div>
-   <div class="cmp"><div>אַתָּה ${S.char}</div><div class="bar"><span style="width:${t/mx*100}%;background:#2bd66b"></span></div><div>${t.toFixed(1)}</div>
-   <div>הַשִּׂיא 👻</div><div class="bar"><span style="width:${bt/mx*100}%;background:#bbb"></span></div><div>${bt.toFixed(1)}</div></div>
-   <div style="font-size:30px">🚀 ${spm} הֲבָרוֹת לְדַקָּה · ✗ ${R.mist} · 🪙 +${coins}</div>
-   ${prev&&!rec?`<div style="font-size:26px">!עוֹד ${(t-prev.time).toFixed(1)} שְׁנִיּוֹת לַשִּׂיא — אַתָּה יָכוֹל</div>`:''}<br>
-   <button class="big" id="agB">🔁 שׁוּב</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`);
+  modal(`${rec&&prev?'<div class="banner">🏆 NEW RECORD! +500</div>':''}<div style="font-size:80px">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div>
+   <div style="font-size:64px;font-weight:bold">⏱ ${t.toFixed(1)} sec</div><div><span class="ptsbig" data-cnt="${pts}">0</span> points!${R.mist===0?' 🎯 Perfect +200':''}</div>
+   <div class="cmp"><div>You ${icon(S.char)}</div><div class="bar"><span style="width:${t/mx*100}%;background:#2bd66b"></span></div><div>${t.toFixed(1)}</div>
+   <div>Record 👻</div><div class="bar"><span style="width:${bt/mx*100}%;background:#bbb"></span></div><div>${bt.toFixed(1)}</div></div>
+   <div style="font-size:30px">🚀 ${spm} syllables/min · ✗ ${R.mist} · 🪙 +${coins}</div>
+   ${prev&&!rec?`<div style="font-size:26px">Only ${(t-prev.time).toFixed(1)} sec from your record — you can do it!</div>`:''}<br>
+   <button class="big" id="agB">🔁 Again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️ Map</button>`);if(rec&&prev){$('card').classList.add('shk');fanfare()}
   $('agB').onclick=()=>{closeModal();speedStart(R.i)};
 };
 if(location.hash==='#seed2'){S.speed={pg3:{time:24.3,stars:3,spm:80},pg4:{time:28.1,stars:2,spm:70}};S.coins=210;renderMap()}
@@ -347,3 +349,9 @@ if(/^#spdemo=/.test(location.hash)){const [i,ph]=location.hash.slice(8).split(',
     if(ph==='end')setTimeout(()=>$('spStop').onclick(),300)}}
 
 renderMap();
+
+// ---------- points FX ----------
+function flyAt(el,txt){const d=document.createElement('div');d.className='fly';d.textContent=txt;const r=el?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0};d.style.left=(r.left+r.width/2-30)+'px';d.style.top=(r.top-10)+'px';document.body.appendChild(d);setTimeout(()=>d.remove(),1000);const p=$('ptsR');if(p){p.classList.remove('pop');void p.offsetWidth;p.classList.add('pop')}}
+function comboFx(t){const d=document.createElement('div');d.className='combo';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),900);[660,880,1100].forEach((n,k)=>setTimeout(()=>beep(n,.12,'square',.07),k*70))}
+function fanfare(){[523,659,784,1046,784,1046,1318].forEach((n,k)=>setTimeout(()=>beep(n,.18,'triangle',.18),k*120))}
+function countUp(){document.querySelectorAll('[data-cnt]').forEach(e=>{const to=+e.dataset.cnt;delete e.dataset.cnt;let t0=performance.now();const D=1200;(function f(){const k=Math.min(1,(performance.now()-t0)/D);e.textContent='+'+Math.round(to*(1-Math.pow(1-k,3)));if(Math.floor(k*20)%3===0&&k<1)beep(1200+k*600,.03,'square',.03);if(k<1)requestAnimationFrame(f)})()})}

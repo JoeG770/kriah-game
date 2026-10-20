@@ -1,10 +1,10 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<!doctype html><html lang="en" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="מרוץ קריאה"><meta name="theme-color" content="#3b1d8f">
+<meta name="apple-mobile-web-app-title" content="Reading Race"><meta name="theme-color" content="#3b1d8f">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>מרוץ קריאה</title>
+<title>Reading Race</title>
 <style>
 @font-face{font-family:"Heb";src:url(hebrew.ttf)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -67,26 +67,46 @@ button{font-family:inherit;border:0;border-radius:24px;cursor:pointer}
 .cmp .bar{background:#eee;border-radius:12px;height:26px;overflow:hidden;direction:rtl}.cmp .bar span{display:block;height:100%;border-radius:12px}
 #count.pop{animation:pop .5s}
 #confetti{position:absolute;inset:0;pointer-events:none;z-index:7}
+
+html,body{background:radial-gradient(circle at 70% 0%,#7b4dff 0,#5b2bd6 35%,#2a8cf0 100%);-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+.pill{backdrop-filter:blur(6px);box-shadow:inset 0 1px 0 #fff3,0 4px 10px #0003}
+.lv{background:radial-gradient(circle at 35% 25%,#fff6a8 0,#ffd23f 45%,#f5b800 100%);box-shadow:0 8px 0 #c79a00,0 14px 24px #0004,inset 0 -6px 0 #0001;transition:transform .15s}
+.lv:active{transform:translateY(6px) scale(.97)}
+.lv.boss{background:radial-gradient(circle at 35% 25%,#ffb3be 0,#ff5d73 50%,#e0334f 100%)}
+.lv.lock{background:radial-gradient(circle at 35% 25%,#cfd6dd,#9aa7b3)}
+.lv:not(.lock):not(.done1){animation:glow 2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 8px 0 #c79a00,0 0 30px 8px #fff7}}
+.car{transform:none!important}.carsvg{width:56px;height:36px;display:block;filter:drop-shadow(0 3px 2px #0005)}
+.big{transition:transform .1s}.big:active{transform:translateY(6px)}
+#ptsP,#ptsR,#spPts{background:linear-gradient(90deg,#ffd23f,#ff9f1c);color:#5a2a00;font-weight:bold;text-shadow:0 1px 0 #fff8}
+.fly{position:fixed;z-index:9;pointer-events:none;font-size:40px;font-weight:bold;color:#ffd23f;text-shadow:0 3px 0 #b86b00,0 0 12px #fff;animation:fly 1s ease-out forwards;direction:ltr}
+@keyframes fly{to{transform:translateY(-90px) scale(1.4);opacity:0}}
+.combo{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:9;pointer-events:none;font-size:90px;font-weight:900;color:#fff;-webkit-text-stroke:3px #ff5d73;animation:cmb .9s ease-out forwards}
+@keyframes cmb{0%{transform:translate(-50%,-50%) scale(.3)}30%{transform:translate(-50%,-50%) scale(1.25)}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}
+.shk{animation:shk .5s}@keyframes shk{20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,2px)}80%{transform:translate(6px,0)}}
+.ptsbig{font-size:60px;font-weight:900;color:#ff9f1c;text-shadow:0 4px 0 #b86b00}
+.pill,.card,.top>span,.cmp>div,.big{direction:ltr;unicode-bidi:isolate;white-space:nowrap}.cmp .bar{direction:rtl}
+.top{font-size:22px;gap:8px;flex-wrap:nowrap}.top .pill{padding:6px 12px}.top>span:first-child{font-size:26px}
 </style></head><body>
 <div id="sMap" class="screen on">
- <div class="top"><span>🏁 מֵרוֹץ קְרִיאָה</span><span class="sp"></span><span class="pill" id="streakP">🔥 0</span><span class="pill" id="coinsP">🪙 0</span>
- <button class="pill" style="font-size:28px;color:#fff;background:#ff9f1c" id="modeB">🏁</button><button class="pill" style="font-size:30px;color:#fff" onclick="openChars()" id="charB">🚗</button>
- <button class="pill" style="font-size:22px;color:#fff" id="parentB">👨 הורה</button></div>
+ <div class="top"><span>🏁 Reading Race</span><span class="sp"></span><span class="pill" id="streakP">🔥 0</span><span class="pill" id="coinsP">🪙 0</span><span class="pill" id="ptsP">⭐ 0 pts</span>
+ <button class="pill" style="font-size:28px;color:#fff;background:#ff9f1c" id="modeB">🏁</button><button class="pill" style="font-size:30px;color:#fff" onclick="openChars()" id="charB"><svg class="carsvg" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 26 Q4 18 12 17 L20 8 Q23 5 28 5 L44 5 Q50 5 53 10 L58 17 Q62 18 62 24 L62 29 Q62 31 60 31 L6 31 Q4 31 4 29Z" fill="#e63946" stroke="#a4161a" stroke-width="1.5"/><path d="M22 10 Q24 8 28 8 L34 8 L34 17 L15 17Z M37 8 L44 8 Q48 8 50 11 L54 17 L37 17Z" fill="#bfe9ff"/><rect x="4" y="21" width="5" height="4" rx="2" fill="#ffe066"/><circle cx="17" cy="31" r="7" fill="#222"/><circle cx="17" cy="31" r="3" fill="#ccc"/><circle cx="49" cy="31" r="7" fill="#222"/><circle cx="49" cy="31" r="3" fill="#ccc"/></svg></button>
+ <button class="pill" style="font-size:22px;color:#fff" id="parentB">👨 Parent</button></div>
  <div id="map"></div></div>
 <div id="sPlay" class="screen">
  <div id="hud"><button class="pill" style="color:#fff;font-size:30px" onclick="quit()">✖</button><span class="pill" id="timer">0.0</span>
- <span class="pill" id="streak">⚡ 0</span><span class="pill" id="coinsR">🪙 0</span><span class="sp" style="flex:1"></span><span id="mic">🎤</span><span id="title" style="font-size:30px"></span></div>
+ <span class="pill" id="streak">⚡ 0</span><span class="pill" id="coinsR">🪙 0</span><span class="pill" id="ptsR">⭐ 0</span><span class="sp" style="flex:1"></span><span id="mic">🎤</span><span id="title" style="font-size:30px"></span></div>
  <div id="track"><span class="fin">🏁</span></div>
  <div id="board"></div>
  <button id="ovr" title="parent">✓</button><button id="ovx" title="parent">✗</button>
  <div id="count"></div></div>
 <div id="sSpeed" class="screen">
- <div id="hud"><button class="pill" style="color:#fff;font-size:30px" id="spQuit">✖</button><span class="pill" id="spBest" style="font-size:30px">🏆</span><span style="flex:1"></span><span id="spTitle" style="font-size:30px"></span></div>
- <div id="spTrack"><span class="fin">🏁</span><span id="spGhost" class="car ghost">🚗</span></div>
+ <div id="hud"><button class="pill" style="color:#fff;font-size:30px" id="spQuit">✖</button><span class="pill" id="spBest" style="font-size:30px">🏆</span><span class="pill" id="spPts" style="font-size:30px">⭐ 0</span><span style="flex:1"></span><span id="spTitle" style="font-size:30px"></span></div>
+ <div id="spTrack"><span class="fin">🏁</span><span id="spGhost" class="car ghost"></span></div>
  <div id="spBoard" class="pg"></div>
  <div id="spTimer">0.0</div>
- <button id="spGo">▶ <span>הַתְחֵל</span></button>
- <div id="spBar"><button id="spX"><span id="spMist">✗ 0</span></button><span style="flex:1"></span><button id="spStop">⏹ <span>!סִיַּמְתִּי</span></button></div>
+ <button id="spGo">▶ <span>START</span></button>
+ <div id="spBar"><button id="spX"><span id="spMist">✗ 0</span></button><span style="flex:1"></span><button id="spStop">⏹ <span>DONE!</span></button></div>
 </div>
 <div class="modal" id="modal"><div class="card" id="card"></div></div>
 <canvas id="confetti"></canvas>
