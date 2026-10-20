@@ -42,6 +42,7 @@ button{font-family:inherit;border:0;border-radius:24px;cursor:pointer}
 .big{font-size:44px;padding:20px 50px;background:#2bd66b;color:#fff;box-shadow:0 8px 0 #179447}
 .modal{position:absolute;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:6}
 .card{background:#fff;color:#3b1d8f;border-radius:36px;padding:30px 40px;text-align:center;font-size:32px;max-width:90%;max-height:90%;overflow:auto}
+#ovx{position:absolute;left:68px;bottom:6px;width:56px;height:56px;border-radius:50%;background:#fff2;font-size:26px;color:#fff6;z-index:4}
 #ovr{position:absolute;left:6px;bottom:6px;width:56px;height:56px;border-radius:50%;background:#fff2;font-size:26px;color:#fff6;z-index:4}
 #mic{font-size:34px}.mic-on{animation:pu 1.2s infinite}@keyframes pu{50%{opacity:.4}}
 .chars{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}.chars button{font-size:60px;background:#eee;padding:10px 20px}
@@ -59,7 +60,7 @@ button{font-family:inherit;border:0;border-radius:24px;cursor:pointer}
  <span class="pill" id="streak">⚡ 0</span><span class="pill" id="coinsR">🪙 0</span><span class="sp" style="flex:1"></span><span id="mic">🎤</span><span id="title" style="font-size:30px"></span></div>
  <div id="track"><span class="fin">🏁</span></div>
  <div id="board"></div>
- <button id="ovr" title="parent">✓</button>
+ <button id="ovr" title="parent">✓</button><button id="ovx" title="parent">✗</button>
  <div id="count"></div></div>
 <div class="modal" id="modal"><div class="card" id="card"></div></div>
 <canvas id="confetti"></canvas>

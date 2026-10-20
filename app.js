@@ -79,7 +79,8 @@ function start(i,practice){
   G.car=document.createElement('span');G.car.className='car';G.car.textContent=S.char;tr.appendChild(G.car);
   const best=!practice&&S.best[l.id];if(best&&best.times){G.ghostT=best.times;G.ghost=document.createElement('span');G.ghost.className='car ghost';G.ghost.textContent=S.char;tr.appendChild(G.ghost)}
   moveCar(G.car,0);if(G.ghost)moveCar(G.ghost,0);hud();
-  countdown(()=>{G.t0=performance.now();G.last=G.t0;G.running=true;highlight();listen();tick()});
+  const go=()=>countdown(()=>{G.t0=performance.now();G.last=G.t0;G.running=true;V.acc=0;highlight();listen();tick()});
+  if(CFG.mode==='webspeech'||/#demo/.test(location.hash))go();else ensureMic().then(go);
 }
 function fitPage(l){const b=$('board'),p=$('page');const H=b.clientHeight-8,W=b.clientWidth-8;
   if(l.kind!=='words'||H*l.aspect>=W*0.6)p.style.width=Math.min(W,H*l.aspect)+'px';else p.style.width=W+'px'}
@@ -110,41 +111,103 @@ function help(){
   if(!G.helped.some(h=>h.t===txt))G.helped.push({t:txt,u});noteVowelMiss();
   say(txt,()=>{G.last=performance.now();G.helping=false;G.missHere=0});
 }
-// ---------- speech ----------
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,speaking=false,wantListen=false;
+// ---------- audio engine ----------
+// One getUserMedia for the whole session (Safari only prompts once per page load / origin grant).
+// Default recognizer = on-device voice-activity + syllable-nucleus counting (no network, no re-prompts).
+// Optional: cloud verifier (proxy URL set in parent screen) checks each utterance's text and rolls back mismatches.
+// Optional: Web Speech (experimental; may re-prompt on iOS).
+const CFG=Object.assign({mode:'vad',proxy:'',sens:1},JSON.parse(localStorage.getItem('kriah-cfg')||'{}'));
+const saveCfg=()=>localStorage.setItem('kriah-cfg',JSON.stringify(CFG));
+let MIC=null,AN=null,BUF=null,speaking=false,wantListen=false,vadT=null;
+async function ensureMic(){
+  if(MIC&&MIC.getAudioTracks().some(t=>t.readyState==='live'))return true;
+  try{MIC=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
+  catch(e){$('mic').textContent='🚫';return false}
+  const a=ac();if(a.state==='suspended')await a.resume();
+  const src=a.createMediaStreamSource(MIC);AN=a.createAnalyser();AN.fftSize=1024;BUF=new Float32Array(AN.fftSize);src.connect(AN);
+  MIC.getAudioTracks()[0].onended=()=>{MIC=null};
+  return true;
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume()});
+// VAD state
+const V={floor:0.004,on:false,since:0,lastLoud:0,peak:0,dip:true,nuclei:0,uttStart:0,acc:0,rec:null,chunks:[]};
+function rms(){AN.getFloatTimeDomainData(BUF);let s=0;for(const x of BUF)s+=x*x;return Math.sqrt(s/BUF.length)}
 function listen(){
-  wantListen=true;if(!SR){$('mic').textContent='🙊';return}
-  if(rec)return;rec=new SR();rec.lang='he-IL';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=5;
-  rec.onstart=()=>$('mic').classList.add('mic-on');
-  rec.onresult=ev=>{if(!G||!G.running||speaking)return;
-    for(let r=ev.resultIndex;r<ev.results.length;r++){const res=ev.results[r];
-      const alts=[...res].map(a=>a.transcript.trim().split(/\s+/).filter(Boolean));
-      const key=r;if(G.resKey!==key){G.resKey=key;G.used=0}
-      // try each alternative, consume new tokens in order
-      let bestUsed=G.used,adv=0;
-      for(const toks of alts){let k=G.used,a=0,p=G.pos;
-        while(k<toks.length&&p+a<units(G.l).length){if(matchUnit(G.l,p+a,toks[k])){a++;}
-          else if(k+1<toks.length&&p+a<units(G.l).length&&matchUnit(G.l,p+a,toks[k]+toks[k+1])){a++;k++}
-          else if(G.l.kind!=='words'&&toks[k].length>2){ // glued syllables "דהדידו": try consuming chunks
-            break}
-          else break; k++}
-        if(a>adv){adv=a;bestUsed=k}}
-      for(let n=0;n<adv;n++)advance();
-      if(adv)G.used=bestUsed;
-      else if(res.isFinal&&alts[0].length>G.used)wrong();
-      if(res.isFinal){G.resKey=null;G.used=0}
-    }};
-  rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){$('mic').textContent='🚫';wantListen=false}};
-  rec.onend=()=>{$('mic').classList.remove('mic-on');rec=null;if(wantListen&&!speaking&&G&&G.running)setTimeout(listen,150)};
+  wantListen=true;$('mic').textContent='🎤';$('mic').classList.add('mic-on');
+  if(CFG.mode==='webspeech')return webSpeech();
+  if(!AN||vadT)return;
+  vadT=setInterval(vadTick,20);
+}
+function stopListen(){wantListen=false;$('mic').classList.remove('mic-on');if(vadT){clearInterval(vadT);vadT=null}if(rec){try{rec.abort()}catch(e){}rec=null}}
+function vadTick(){
+  if(!G||!G.running||speaking)return;
+  const now=performance.now(),e=rms();
+  if(!V.on)V.floor=V.floor*0.995+Math.min(e,0.05)*0.005; // adapt to room noise while quiet
+  const thOn=Math.max(0.012,V.floor*3.2)/CFG.sens,thOff=thOn*0.6;
+  if(!V.on&&e>thOn){V.on=true;V.uttStart=now;V.lastLoud=now;V.nuclei=0;V.peak=e;V.dip=false;startClip()}
+  if(V.on){
+    if(e>thOff)V.lastLoud=now;
+    // syllable nucleus = energy peak followed by a dip below 55% of that peak
+    if(!V.dip&&e>V.peak)V.peak=e;
+    if(!V.dip&&e<V.peak*0.55){V.nuclei++;V.dip=true;V.peak=e}
+    else if(V.dip&&e>thOn&&e>V.peak*1.6){V.dip=false;V.peak=e}
+    else if(V.dip&&e<V.peak)V.peak=e;
+    if(now-V.lastLoud>220){ // utterance ended
+      V.on=false;const dur=V.lastLoud-V.uttStart;if(!V.dip)V.nuclei++;
+      if(dur>90)onUtterance(Math.max(1,V.nuclei),dur);else stopClip(null);
+    }
+  }
+}
+function onUtterance(nuc,dur){
+  if(!G||!G.running)return;
+  G.last=performance.now();
+  const startPos=G.pos;
+  if(G.l.kind==='words'){ // advance words as their syllables are heard
+    V.acc+=nuc;let moved=0;
+    while(G.pos<units(G.l).length){const need=Math.max(1,Math.round(units(G.l)[G.pos].syl.length*0.7));if(V.acc>=need){V.acc-=need;advance();moved++}else break}
+    if(!moved&&dur>1500){V.acc=0;advance()}
+  } else { V.acc=0; advance() } // one utterance = one syllable / letter
+  stopClip({from:startPos,to:G.pos});
+}
+// ---- cloud verifier (optional) ----
+function startClip(){
+  if(CFG.mode!=='cloud'||!CFG.proxy||!MIC||typeof MediaRecorder==='undefined')return;
+  try{V.chunks=[];V.rec=new MediaRecorder(MIC);V.rec.ondataavailable=e=>V.chunks.push(e.data);V.rec.start()}catch(e){V.rec=null}
+}
+function stopClip(span){
+  const r=V.rec;V.rec=null;if(!r)return;
+  r.onstop=()=>{if(!span||span.to<=span.from)return;
+    const blob=new Blob(V.chunks,{type:r.mimeType||'audio/mp4'});const exp=[];
+    for(let k=span.from;k<span.to;k++){const u=units(G.l)[k];exp.push(G.l.kind==='words'?u.w:G.l.kind==='letters'?G.l.say[k]:u)}
+    verify(blob,exp,span)};
+  try{r.stop()}catch(e){}
+}
+async function verify(blob,exp,span){
+  try{
+    const fd=new FormData();fd.append('audio',blob,'a.'+((blob.type.includes('webm'))?'webm':'mp4'));fd.append('expected',exp.join(' '));
+    const res=await fetch(CFG.proxy,{method:'POST',body:fd});if(!res.ok)return;const j=await res.json();
+    const toks=(j.text||'').trim().split(/\s+/).filter(Boolean);
+    let ok=0;for(let k=span.from;k<span.to;k++){if(toks.some(t=>matchUnit(G.l,k,t))||toks.join('')&&matchUnit(G.l,k,toks.join('')))ok++}
+    if(ok<Math.ceil((span.to-span.from)*0.6)&&G&&G.running&&G.pos===span.to){rollback(span.from)}
+  }catch(e){}
+}
+function rollback(to){while(G.pos>to){G.pos--;G.times.pop()}G.missHere++;G.miss++;G.streak=0;moveCar(G.car,G.pos);highlight();hud();boop();noteVowelMiss();
+  const e=$('u'+G.pos);if(e){e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake')}if(G.missHere>=2)help()}
+// ---- Web Speech (experimental) ----
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+function webSpeech(){
+  if(!SR||rec)return;rec=new SR();rec.lang='he-IL';rec.continuous=true;rec.interimResults=true;
+  rec.onresult=ev=>{if(!G||!G.running||speaking)return;for(let r=ev.resultIndex;r<ev.results.length;r++){const res=ev.results[r];if(!res.isFinal)continue;
+    const toks=res[0].transcript.trim().split(/\s+/);for(const t of toks){if(G.pos<units(G.l).length&&matchUnit(G.l,G.pos,t))advance()}}};
+  rec.onend=()=>{rec=null}; // no auto-restart: restarting is what re-triggers Safari's prompt
   try{rec.start()}catch(e){}
 }
-function stopListen(){wantListen=false;if(rec){try{rec.abort()}catch(e){}rec=null}}
 function say(t,cb){
   const ss=window.speechSynthesis;if(!ss){cb&&cb();return}
-  speaking=true;const keep=wantListen;stopListen();
+  speaking=true;V.on=false;if(V.rec)stopClip(null);
   const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';u.rate=.7;const v=ss.getVoices().find(v=>/he/i.test(v.lang));if(v)u.voice=v;
-  u.onend=u.onerror=()=>{speaking=false;cb&&cb();if(keep&&G&&G.running)listen()};ss.cancel();ss.speak(u);
-  setTimeout(()=>{if(speaking)u.onend()},4000);
+  let done=false;const fin=()=>{if(done)return;done=true;setTimeout(()=>{speaking=false;V.acc=0},350);cb&&cb()};
+  u.onend=u.onerror=fin;ss.cancel();ss.speak(u);setTimeout(fin,4000);
 }
 // ---------- sounds ----------
 let AC;function ac(){return AC||(AC=new(window.AudioContext||window.webkitAudioContext)())}
@@ -174,7 +237,8 @@ function toMap(){show('sMap');renderMap()}
 function modal(h){$('card').innerHTML=h;$('modal').style.display='flex'}
 function closeModal(){$('modal').style.display='none'}
 // parent override: tap = accept current, long press = mark wrong
-(()=>{let t;const o=$('ovr');o.addEventListener('pointerdown',()=>{t=setTimeout(()=>{t=null;wrong()},600)});o.addEventListener('pointerup',()=>{if(t){clearTimeout(t);advance(true)}})})();
+$('ovr').onclick=()=>advance(true);
+$('ovx').onclick=()=>{if(!G||!G.running)return;if(G.pos>0&&performance.now()-G.last<4000)rollback(G.pos-1);else wrong()};
 // characters
 function openChars(){modal(`<div>בְּחַר דְּמוּת 🪙 ${S.coins}</div><div class="chars">${CHARS.map(([c,p])=>`<button class="${S.char===c?'sel':''}" data-c="${c}" data-p="${p}">${c}<div style="font-size:22px">${S.owned.includes(c)?'✓':'🪙'+p}</div></button>`).join('')}</div><br><button class="big" onclick="closeModal();renderMap()">סְגוֹר</button>`);
   document.querySelectorAll('.chars button').forEach(b=>b.onclick=()=>{const c=b.dataset.c,p=+b.dataset.p;if(!S.owned.includes(c)){if(S.coins<p){boop();return}S.coins-=p;S.owned.push(c);confetti()}S.char=c;save();openChars()})}
@@ -186,8 +250,11 @@ function parent(){
    <div style="font-size:24px;text-align:right">ריצות: ${S.runs.length} · ימים ברצף: ${dayStreak()}<br><b>ניקוד שמתקשה בו:</b> ${vm.length?vm.map(([v,n])=>VNAME[v]+' ('+n+')').join(' · '):'—'}<br>
    <b>שיאים:</b> ${L.filter(l=>S.best[l.id]).map(l=>l.title+': '+S.best[l.id].spm+' הב/דק').join(' · ')||'—'}</div>
    <label style="font-size:24px"><input type="checkbox" id="ua" ${S.unlockAll?'checked':''}> פתח את כל השלבים</label><br>
-   <div style="font-size:18px;color:#666">✓ בפינה השמאלית התחתונה במשחק: הקשה = נכון, לחיצה ארוכה = טעות</div>
+   <div style="font-size:18px;color:#666">✓ / ✗ בפינה השמאלית התחתונה: ✓ = נכון (קדימה), ✗ = טעות (חוזר צעד אחורה)</div>
+   <div style="font-size:20px;text-align:right;margin:8px 0">זיהוי: <select id="md"><option value="vad">קול (מקומי, ללא אינטרנט)</option><option value="cloud">קול + בדיקה בענן</option><option value="webspeech">Web Speech (ניסיוני)</option></select>
+   רגישות <input id="sens" type="range" min="0.5" max="2" step="0.1" value="${CFG.sens}"><br>כתובת שרת (לבדיקה בענן): <input id="px" style="width:60%" value="${CFG.proxy}" placeholder="https://...workers.dev"></div>
    <button class="big" onclick="closeModal();renderMap()">סגור</button>`);
+  $('md').value=CFG.mode;$('md').onchange=e=>{CFG.mode=e.target.value;saveCfg()};$('sens').oninput=e=>{CFG.sens=+e.target.value;saveCfg()};$('px').onchange=e=>{CFG.proxy=e.target.value.trim();if(CFG.proxy&&CFG.mode==='vad')CFG.mode='cloud';saveCfg()};
   $('ua').onchange=e=>{S.unlockAll=e.target.checked;save()};
   const c=$('ch').getContext('2d'),R=S.runs.slice(-30);c.fillStyle='#3b1d8f';c.font='18px sans-serif';c.fillText('הברות לדקה (30 ריצות אחרונות)',440,22);
   const mx=Math.max(60,...R.map(r=>r.spm));c.strokeStyle='#5b2bd6';c.lineWidth=4;c.beginPath();
