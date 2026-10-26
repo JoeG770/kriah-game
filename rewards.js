@@ -18,6 +18,10 @@ const LEGS=(c='#1F2937')=>`<g class="lL"><rect x="38" y="84" width="8" height="1
 const ARMS=(c,h='#F8C9A0')=>`<g class="aL"><path d="M30 64 Q18 70 16 80" stroke="${c}" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="16" cy="81" r="5" fill="${h}"/></g><g class="aR"><path d="M70 64 Q82 70 84 80" stroke="${c}" stroke-width="8" stroke-linecap="round" fill="none"/><circle cx="84" cy="81" r="5" fill="${h}"/></g>`;
 const EYES=(y=40,dx=9)=>`<g class="eyes"><ellipse cx="${50-dx}" cy="${y}" rx="3.6" ry="4.4" fill="#1F2937"/><ellipse cx="${50+dx}" cy="${y}" rx="3.6" ry="4.4" fill="#1F2937"/><circle cx="${51-dx}" cy="${y-1.6}" r="1.3" fill="#fff"/><circle cx="${51+dx}" cy="${y-1.6}" r="1.3" fill="#fff"/></g>`;
 const W=(inner,cls)=>`<svg class="carsvg mascot ${cls}" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+// family helpers: stick legs (c=skin/leg, shoe), stick arms, round head
+const SL=(c,shoe,girl,short)=>{const y=short?90:86;return `<g class="lL"><path d="M44 ${y-4} V100" stroke="${girl?'#F8C9A0':c}" stroke-width="${girl?2.6:7}" stroke-linecap="round"/><ellipse cx="42" cy="101" rx="5" ry="2.6" fill="${shoe}"/></g><g class="lR"><path d="M56 ${y-4} V100" stroke="${girl?'#F8C9A0':c}" stroke-width="${girl?2.6:7}" stroke-linecap="round"/><ellipse cx="58" cy="101" rx="5" ry="2.6" fill="${shoe}"/></g>`};
+const SA=(sl,x1,y1,x2,y2,ls)=>`<g class="aL"><path d="M${x1} ${y1} Q${x1-8} ${y1+8} ${x1-10} ${y1+18}" stroke="${ls?sl:'#E8B48C'}" stroke-width="${ls?4.5:2.6}" fill="none" stroke-linecap="round"/><path d="M${x1+2} ${y1-4} L${x1-5} ${y1+5}" stroke="${sl}" stroke-width="7" stroke-linecap="round"/><circle cx="${x1-10}" cy="${y1+19}" r="2.8" fill="#F8C9A0"/></g><g class="aR"><path d="M${x2} ${y2} Q${x2+8} ${y2+8} ${x2+10} ${y2+18}" stroke="${ls?sl:'#E8B48C'}" stroke-width="${ls?4.5:2.6}" fill="none" stroke-linecap="round"/><path d="M${x2-2} ${y2-4} L${x2+5} ${y2+5}" stroke="${sl}" stroke-width="7" stroke-linecap="round"/><circle cx="${x2+10}" cy="${y2+19}" r="2.8" fill="#F8C9A0"/></g>`;
+const HEAD=(cy=30,r=24)=>`<circle cx="${50-r}" cy="${cy+2}" r="4" fill="#F5BE96"/><circle cx="${50+r}" cy="${cy+2}" r="4" fill="#F5BE96"/><circle cx="50" cy="${cy}" r="${r}" fill="#FAD3B0"/><circle cx="${50-r*.55}" cy="${cy+9}" r="3.2" fill="#FCA5A5" opacity=".6"/><circle cx="${50+r*.55}" cy="${cy+9}" r="3.2" fill="#FCA5A5" opacity=".6"/>`;
 const MASCOT={
  yanky:{name:'Reb Shunkle',sub:'the Chassidishe boy · ר׳ שונקל',price:0,svg:()=>W(`${LEGS()}
   <path d="M30 58 Q50 52 70 58 L72 88 Q50 92 28 88Z" fill="#fff" stroke="#E5E7EB"/><path d="M30 60 L30 88 Q38 90 44 90 L44 56Z M70 60 L70 88 Q62 90 56 90 L56 56Z" fill="#1F2937"/>
@@ -85,6 +89,57 @@ const MASCOT={
  star:{name:'Diamond Dovid',sub:'shining Magen Dovid · מגן דוד',price:2000,svg:()=>W(`${LEGS('#0369A1')}${ARMS('#38BDF8','#BAE6FD')}
   <path d="M50 8 L80 60 H20Z" fill="#38BDF8" stroke="#0284C7" stroke-width="3" stroke-linejoin="round"/><path d="M50 84 L20 32 H80Z" fill="#7DD3FC" stroke="#0284C7" stroke-width="3" stroke-linejoin="round" opacity=".92"/>
   ${EYES(46,8)}<path class="mouth" d="M43 55 Q50 61 57 55" stroke="#0C4A6E" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M30 26 l4 -6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>`,'m-star')},
+ // ---------- Family set (comic style: big round heads, stick limbs) ----------
+ tatty:{fam:1,name:'Tatty',sub:'the Tatty of the family',price:100,svg:()=>W(`${SL('#1E3A8A','#1F2937')}
+  <path d="M34 54 H66 L64 74 H36Z" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/><path d="M34 54 L28 64 L36 66Z M66 54 L72 64 L64 66Z" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.2"/><path d="M50 54 V74" stroke="#9CA3AF" stroke-width="1"/><path d="M44 54 L50 60 L56 54" fill="none" stroke="#9CA3AF" stroke-width="1.2"/>
+  <path d="M36 74 H64 L63 86 H37Z" fill="#1E3A8A"/>
+  ${SA('#F3F4F6',29,64,71,64)}
+  ${HEAD(30)}<path class="beard" d="M28 32 Q28 58 50 58 Q72 58 72 32 Q68 46 50 46 Q32 46 28 32Z" fill="#7C4A2A"/>
+  <path d="M27 30 Q28 8 50 8 Q72 8 73 30 Q68 18 50 18 Q32 18 27 30Z" fill="#2B2118"/>
+  <g class="hat"><path d="M38 12 Q50 2 62 12 Q50 9 38 12Z" fill="#111827"/></g>
+  ${EYES(30,9)}<path class="mouth" d="M42 40 Q50 47 58 40Z" fill="#fff" stroke="#7F1D1D" stroke-width="1.6"/>`,'m-fam m-tatty')},
+ mommy:{fam:1,name:'Mommy',sub:'the Mommy of the family',price:100,svg:()=>W(`${SL('#F8C9A0','#1F2937',1)}
+  <path d="M28 30 Q22 52 30 60 Q26 44 34 36Z M72 30 Q78 52 70 60 Q74 44 66 36Z" fill="#C2662D"/>
+  <path d="M36 52 H64 L62 70 H38Z" fill="#EC4899"/>
+  <path d="M38 70 H62 L66 96 H34Z" fill="#1E293B"/><g fill="#60A5FA"><path d="M37 76 h6 v4 h-6z M47 76 h6 v4 h-6z M57 76 h6 v4 h-6z M41 84 h6 v4 h-6z M52 84 h6 v4 h-6z M36 91 h6 v3 h-6z M58 91 h6 v3 h-6z"/></g>
+  ${SA('#EC4899',37,56,63,56,1)}
+  ${HEAD(30)}
+  <path d="M26 34 Q20 8 50 6 Q80 8 74 34 Q76 22 66 18 Q60 24 50 20 Q40 24 34 18 Q24 22 26 34Z" fill="#D97736"/><path d="M30 26 q4 -6 8 -2 M62 24 q4 -4 8 2" stroke="#9A4A1A" stroke-width="1.5" fill="none"/>
+  ${EYES(30,9)}<path class="mouth" d="M43 40 Q50 46 57 40" stroke="#9A3412" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,'m-fam m-mommy')},
+ henny:{fam:1,name:'Henny',sub:'the big sister',price:80,svg:()=>W(`${SL('#F8C9A0','#BE185D',1)}
+  <path d="M38 54 H62 L68 92 H32Z" fill="#E11D48"/><path d="M38 54 L32 64 L40 64Z M62 54 L68 64 L60 64Z" fill="#E11D48"/>
+  <g fill="#fff"><circle cx="44" cy="68" r="3"/><circle cx="57" cy="78" r="3"/><circle cx="42" cy="84" r="2.6"/></g><g fill="#FDE047"><circle cx="44" cy="68" r="1"/><circle cx="57" cy="78" r="1"/><circle cx="42" cy="84" r=".9"/></g>
+  ${SA('#E11D48',36,60,64,60,1)}
+  <g class="pL"><circle cx="20" cy="36" r="8" fill="#F5C518"/><circle cx="16" cy="44" r="6" fill="#F5C518"/></g><g class="pR"><circle cx="80" cy="36" r="8" fill="#F5C518"/><circle cx="84" cy="44" r="6" fill="#F5C518"/></g>
+  ${HEAD(32,22)}
+  <path d="M28 30 Q30 8 50 8 Q70 8 72 30 Q66 16 58 20 Q54 14 50 18 Q46 14 42 20 Q34 16 28 30Z" fill="#F5C518"/><path d="M36 14 q3 4 6 0 q3 4 6 0 q3 4 6 0 q3 4 6 0" stroke="#D4A50F" stroke-width="1.4" fill="none"/>
+  ${EYES(32,8)}<path class="mouth" d="M44 42 Q50 47 56 42" stroke="#9A3412" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,'m-fam m-henny')},
+ sendy:{fam:1,name:'Sendy',sub:'the big brother',price:80,svg:()=>W(`${SL('#F8C9A0','#1F2937')}
+  <path d="M36 54 H64 L63 76 H37Z" fill="#93C5FD"/><path d="M36 54 L30 64 L38 64Z M64 54 L70 64 L62 64Z" fill="#93C5FD"/>
+  <path d="M37 76 H63 L64 88 H52 L50 82 L48 88 H36Z" fill="#0F9F8F"/>
+  ${SA('#93C5FD',33,60,67,60)}
+  ${HEAD(32,22)}
+  <g class="pL"><path d="M29 32 q-4 4 0 8 q4 4 0 8" stroke="#5B3A1E" stroke-width="3.4" fill="none" stroke-linecap="round"/></g><g class="pR"><path d="M71 32 q4 4 0 8 q-4 4 0 8" stroke="#5B3A1E" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>
+  <path d="M28 30 Q28 8 50 8 Q72 8 72 30 Q66 20 56 22 Q50 18 44 22 Q34 20 28 30Z" fill="#5B3A1E"/>
+  <g class="hat"><path d="M38 12 Q50 2 62 12 Q50 9 38 12Z" fill="#1E3A8A"/></g>
+  ${EYES(32,8)}<path class="mouth" d="M43 42 Q50 48 57 42" stroke="#9A3412" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,'m-fam m-sendy')},
+ beri:{fam:1,name:'Beri',sub:'the little brother',price:60,svg:()=>W(`${SL('#F8C9A0','#1F2937',0,1)}
+  <path d="M38 62 H62 L61 80 H39Z" fill="#22C55E"/><path d="M38 62 L33 70 L40 70Z M62 62 L67 70 L60 70Z" fill="#22C55E"/>
+  <path d="M39 80 H61 L62 90 H52 L50 85 L48 90 H38Z" fill="#2563EB"/>
+  ${SA('#22C55E',36,68,64,68)}
+  <g transform="translate(9 12) scale(.82)">${HEAD(32,22)}
+  <g class="pL"><path d="M29 32 q-4 4 0 8 q4 4 0 8" stroke="#5B3A1E" stroke-width="3.6" fill="none" stroke-linecap="round"/></g><g class="pR"><path d="M71 32 q4 4 0 8 q-4 4 0 8" stroke="#5B3A1E" stroke-width="3.6" fill="none" stroke-linecap="round"/></g>
+  <path d="M28 30 Q28 10 50 10 Q72 10 72 30 Q64 18 50 20 Q36 18 28 30Z" fill="#5B3A1E"/>
+  <g class="hat"><path d="M38 14 Q50 4 62 14 Q50 11 38 14Z" fill="#111827"/></g>
+  ${EYES(32,8)}<path class="mouth" d="M41 41 Q50 50 59 41Z" fill="#fff" stroke="#9A3412" stroke-width="1.8"/></g>`,'m-fam m-beri')},
+ miri:{fam:1,baby:1,name:'Miri',sub:'the baby',price:60,svg:()=>W(`
+  <g class="lL"><ellipse cx="40" cy="96" rx="8" ry="5" fill="#7C3AED"/></g><g class="lR"><ellipse cx="60" cy="96" rx="8" ry="5" fill="#7C3AED"/></g>
+  <path d="M34 66 Q50 58 66 66 L68 94 Q50 100 32 94Z" fill="#8B5CF6"/><path d="M42 72 h16" stroke="#C4B5FD" stroke-width="2"/>
+  <g class="aL"><path d="M35 70 Q26 74 25 82" stroke="#8B5CF6" stroke-width="7" stroke-linecap="round" fill="none"/><circle cx="25" cy="83" r="4.4" fill="#F8C9A0"/></g><g class="aR"><path d="M65 70 Q74 74 75 82" stroke="#8B5CF6" stroke-width="7" stroke-linecap="round" fill="none"/><circle cx="75" cy="83" r="4.4" fill="#F8C9A0"/></g>
+  <circle cx="50" cy="44" r="23" fill="#FAD3B0"/><circle cx="27" cy="46" r="4" fill="#F5BE96"/><circle cx="73" cy="46" r="4" fill="#F5BE96"/>
+  <path d="M50 21 q-2 -8 4 -10 q6 -1 4 5 q-2 3 -4 0" stroke="#8B5A2B" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  ${EYES(42,8)}<circle cx="38" cy="50" r="3.4" fill="#FCA5A5" opacity=".7"/><circle cx="62" cy="50" r="3.4" fill="#FCA5A5" opacity=".7"/>
+  <g class="mouth"><ellipse cx="50" cy="54" rx="7" ry="4" fill="#F472B6"/><circle cx="50" cy="54" r="2.6" fill="#FDE68A" stroke="#DB2777" stroke-width="1.4"/></g>`,'m-fam m-miri m-baby')},
 };
 window.MASCOT=MASCOT;
 
@@ -118,15 +173,15 @@ const _md=modal;modal=function(h){$('card').classList.remove('shopcard');_md(h)}
 // ---------- shop ----------
 let shopTab='racers';
 openChars=function(){const n=S.coins;
-  const tabs=`<div class="tabs"><button class="${shopTab==='racers'?'on':''}" data-t="racers">Characters</button><button class="${shopTab==='treas'?'on':''}" data-t="treas">Treasures <small>${S.treas.length}/${TREAS.length}</small></button></div>`;
-  const grid=shopTab==='racers'
-   ?`<div class="shop">${Object.entries(MASCOT).map(([k,m])=>{const own=S.owned.includes(k);return `<button class="it ${S.char===k?'sel':''} ${own?'own':n<m.price?'lock':''}" data-k="${k}" data-p="${m.price}"><div class="art">${m.svg()}</div><div class="nm">${m.name}</div><div class="sb">${m.sub}</div><div class="pr">${own?(S.char===k?'✓ Racing':'Owned · tap to pick'):priceHTML(m.price)}</div></button>`}).join('')}</div>`
+  const tabs=`<div class="tabs"><button class="${shopTab==='racers'?'on':''}" data-t="racers">Characters</button><button class="${shopTab==='family'?'on':''}" data-t="family">Family</button><button class="${shopTab==='treas'?'on':''}" data-t="treas">Treasures <small>${S.treas.length}/${TREAS.length}</small></button></div>`;
+  const grid=shopTab!=='treas'
+   ?`<div class="shop">${Object.entries(MASCOT).filter(([k,m])=>!!m.fam===(shopTab==='family')).map(([k,m])=>{const own=S.owned.includes(k);return `<button class="it ${S.char===k?'sel':''} ${own?'own':n<m.price?'lock':''}" data-k="${k}" data-p="${m.price}"><div class="art">${m.svg()}</div><div class="nm">${m.name}</div><div class="sb">${m.sub}</div><div class="pr">${own?(S.char===k?'✓ Racing':'Owned · tap to pick'):priceHTML(m.price)}</div></button>`}).join('')}</div>`
    :`<div class="shop">${TREAS.map(([k,nm,he,p,art])=>{const own=S.treas.includes(k);return `<button class="it ${own?'own':n<p?'lock':''}" data-k="${k}" data-p="${p}"><div class="art">${art}</div><div class="nm">${nm}</div><div class="sb he">${he}</div><div class="pr">${own?'✓ In your collection':priceHTML(p)}</div></button>`}).join('')}</div>`;
   modal(`<div class="shophd"><div><div class="ttl">Treasure Shop</div><div class="hint">Read to earn coins · 10 silver = 1 gold · 5 gold = 1 pearl · 5 pearls = 1 diamond</div></div>${walletHTML(n)}</div>${tabs}${grid}<button class="big" onclick="closeModal();renderMap()">Close</button>`);
   $('card').classList.add('shopcard');
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{shopTab=b.dataset.t;openChars()});
   document.querySelectorAll('.shop .it').forEach(b=>b.onclick=()=>{const k=b.dataset.k,p=+b.dataset.p;
-    if(shopTab==='racers'){if(!S.owned.includes(k)){if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}S.coins-=p;S.owned.push(k);S.char=k;save();openChars();dance({title:'New character!',sub:MASCOT[k].name+' joined your team',who:k,gems:p});return}S.char=k;save();openChars();return}
+    if(shopTab!=='treas'){if(!S.owned.includes(k)){if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}S.coins-=p;S.owned.push(k);S.char=k;save();openChars();dance({title:'New character!',sub:MASCOT[k].name+' joined your team',who:k,gems:p});return}S.char=k;save();openChars();return}
     if(S.treas.includes(k))return;if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}
     const t=TREAS.find(x=>x[0]===k);S.coins-=p;S.treas.push(k);save();openChars();dance({title:'You got it!',sub:t[1]+' is in your collection',art:t[4],gems:p})})};
 
@@ -138,10 +193,10 @@ function dance(o={}){o=Object.assign({title:'Amazing!',sub:'',who:'yanky'},o);
   const m=MASCOT[o.who]&&o.who!=='car'?o.who:'yanky';
   const bits=[...Array(18)].map((_,i)=>{const g=['gold','silver','pearl','diamond'][i%4],a=i/18*Math.PI*2,r=120+Math.random()*90;
     return `<span class="bit" style="--x:${Math.cos(a)*r}px;--y:${Math.sin(a)*r-40}px;--d:${(i%6)*.05}s">${GEM[g]}</span>`}).join('');
-  d.innerHTML=`<div class="stage"><div class="glow"></div>${bits}${o.art?`<div class="prize">${o.art}</div>`:''}<div class="dz">${MASCOT[m].svg()}</div><div class="shadow"></div></div><div class="bubble"><b>${o.title}</b>${o.sub?`<span>${o.sub}</span>`:''}</div>`;
+  d.innerHTML=`<div class="stage${MASCOT[m].baby?' baby':''}"><div class="glow"></div>${bits}${o.art?`<div class="prize">${o.art}</div>`:''}<div class="dz">${MASCOT[m].svg()}</div><div class="shadow"></div></div><div class="bubble"><b>${o.title}</b>${o.sub?`<span>${o.sub}</span>`:''}</div>`;
   document.body.appendChild(d);
   const dz=d.querySelector('.dz');let i=0;
-  const seq=o.big?['hop','spin','kick','shimmy','twist','spin']:['hop','kick','spin','shimmy'];
+  const seq=MASCOT[m].baby?['bounce','wiggle','bounce','wiggle','bounce']:o.big?['hop','spin','kick','shimmy','twist','spin']:['hop','kick','spin','shimmy'];
   (function next(){if(!d.isConnected)return;dz.className='dz '+seq[i%seq.length];i++;if(i<=seq.length)setTimeout(next,620)})();
   [523,659,784,1046,880,1046,1318].forEach((n,k)=>setTimeout(()=>beep(n,.16,'triangle',.14),k*95));
   setTimeout(()=>d.classList.add('out'),o.big?4400:3400);setTimeout(()=>d.remove(),o.big?4900:3900);
@@ -196,6 +251,9 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 @keyframes peyL{from{transform:rotate(18deg) scaleY(1.1)}to{transform:rotate(-14deg) scaleY(.85)}}@keyframes peyR{from{transform:rotate(-18deg) scaleY(.85)}to{transform:rotate(14deg) scaleY(1.1)}}
 .dancer .eyes{transform-box:fill-box;transform-origin:center;animation:blink 1.6s infinite}@keyframes blink{92%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
 .dancer .lulav{transform-origin:50% 100%;animation:waveR .31s infinite alternate}
+.dz.bounce{animation:bnc .62s ease-in-out}@keyframes bnc{25%{transform:translateY(-26px) scale(.95,1.08)}50%{transform:translateY(0) scale(1.12,.86)}75%{transform:translateY(-12px)}}
+.dz.wiggle{animation:wig .62s ease-in-out}@keyframes wig{20%{transform:translateX(-18px) rotate(-10deg) scaleY(.92)}50%{transform:translateX(0) rotate(0)}80%{transform:translateX(18px) rotate(10deg) scaleY(.92)}}
+.baby .lL{animation-duration:.31s!important}.baby .lR{animation-duration:.31s!important}
 .dancer .bit{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px;z-index:1;animation:burst 1.4s cubic-bezier(.2,.8,.3,1) var(--d) both}.dancer .bit .ic{width:30px;height:30px}
 @keyframes burst{0%{transform:translate(0,0) scale(.2);opacity:0}20%{opacity:1}70%{transform:translate(var(--x),var(--y)) scale(1) rotate(200deg);opacity:1}100%{transform:translate(var(--x),calc(var(--y) + 60px)) scale(.6) rotate(320deg);opacity:0}}
 .dancer .prize{position:absolute;top:-30px;right:-30px;z-index:3;animation:pop .6s .2s both}.dancer .prize svg{width:110px;height:110px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
@@ -205,7 +263,8 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 </style>`);
 renderMap();
 // screenshot hooks
-if(/^#shop=/.test(location.hash)){S.coins=1376;S.owned=['yanky','car','owl','dreidel'];S.treas=['candles','challah','cup'];S.char='yanky';shopTab=location.hash.slice(6);openChars()}
+if(/^#shop=/.test(location.hash)){S.coins=1376;S.owned=['yanky','car','owl','dreidel','henny'];S.treas=['candles','challah','cup'];S.char='yanky';shopTab=location.hash.slice(6);openChars()}
 if(/^#spdemo/.test(location.hash)){S.char='yanky';renderMap()}
+if(/^#fdance=/.test(location.hash))dance({title:'Great reading!',sub:MASCOT[location.hash.slice(8)].name+' is dancing for you!',who:location.hash.slice(8),big:true});
 if(location.hash==='#dance')dance({title:'NEW RECORD!',sub:'Reb Shunkle is dancing for you!',big:true});
 if(location.hash==='#buy'){S.coins=900;openChars();shopTab='treas';dance({title:'You got it!',sub:'Menorah is in your collection',art:TREAS[7][4]})}
