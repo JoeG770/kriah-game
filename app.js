@@ -5,7 +5,7 @@ const KEY='kriah-save-v1';
 const S=Object.assign({points:0,coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false,speed:{},mode:'speed'},JSON.parse(localStorage.getItem(KEY)||'{}'));
 const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
 const CARSVG=`<svg class="carsvg" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 26 Q4 18 12 17 L20 8 Q23 5 28 5 L44 5 Q50 5 53 10 L58 17 Q62 18 62 24 L62 29 Q62 31 60 31 L6 31 Q4 31 4 29Z" fill="#e63946" stroke="#a4161a" stroke-width="1.5"/><path d="M22 10 Q24 8 28 8 L34 8 L34 17 L15 17Z M37 8 L44 8 Q48 8 50 11 L54 17 L37 17Z" fill="#bfe9ff"/><rect x="4" y="21" width="5" height="4" rx="2" fill="#ffe066"/><circle cx="17" cy="31" r="7" fill="#222"/><circle cx="17" cy="31" r="3" fill="#ccc"/><circle cx="49" cy="31" r="7" fill="#222"/><circle cx="49" cy="31" r="3" fill="#ccc"/></svg>`;
-const icon=c=>c==='🚗'?CARSVG:c;
+function icon(c){return (window.MASCOT&&MASCOT[c])?MASCOT[c].svg():c==='🚗'?CARSVG:c}
 const CHARS=[['🚗',0],['🚀',50],['🦄',120],['🐉',250],['🏎️',400],['🦖',600],['🛸',800],['🐎',1000]];
 // ---------- phonetics ----------
 const NIK=/[\u0591-\u05C7]/g;
@@ -40,7 +40,9 @@ function latin(tok){ // recognizer sometimes answers in latin: "da", "dee"
 function ashV(u){if(/\u05B8|\u05B3/.test(u))return['a','o','u'];if(/\u05B9|\u05D5\u05B9/.test(u))return['o','e','i','u'];if(/\u05D5\u05BC|\u05BB/.test(u))return['u','i'];if(/\u05B5/.test(u))return['e','i','a'];if(/\u05B6/.test(u))return['e','a'];if(/\u05B4/.test(u))return['i','e'];if(/\u05B7|\u05B2/.test(u))return['a'];return['a','e','i','o','u']}
 function lev(a,b){const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return d[b.length]}
 function matchUnit(lvl,i,tok){
-  if(lvl.kind==='letters'){const a=fold(lvl.say[i]),b=fold(tok);return b.length&&lev(a,b)<=Math.max(1,Math.floor(a.length/2))||fold(lvl.units[i])===b[0]&&b.length>=2&&lev(a,b)<=2}
+  if(lvl.kind==='letters'){ // final letters: Yiddish 'ende X' (also plain X, 'lange(r) X', 'X sofis')
+    const FP=/^(ender|ende|langer|lange|ענדער|ענדע|אנדע|לאנגער|לאַנגער|לאנגע|לאַנגע)\s*|\s*(סופית|סוֹפִית|sofis|sofit)$/gi;
+    const base=lvl.say[i].replace(/\s*סוֹפִית$/,''),tk=tok.replace(/[\u0591-\u05C7]/g,'').replace(FP,'').replace(FP,'');const a=fold(base),b=fold(tk);return b.length&&lev(a,b)<=Math.max(1,Math.floor(a.length/2))||fold(lvl.units[i])===b[0]&&b.length>=2&&lev(a,b)<=2}
   if(lvl.kind==='syllables'){
     const u=lvl.units[i],c=fold(u[0]),v=vclass(u);const la=/[a-z]/i.test(tok)?latin(tok):null;
     if(la)return la.c===c&&(!v||la.v.some(h=>ashV(u).includes(h)));
