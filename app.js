@@ -105,7 +105,7 @@ function tick(){if(!G||!G.running)return;const now=performance.now(),t=(now-G.t0
 function advance(byParent){
   if(!G.running)return;const e=$('u'+G.pos);if(e)e.classList.remove('help');
   G.times.push((performance.now()-G.t0)/1000);G.pos++;G.last=performance.now();G.missHere=0;G.helping=false;
-  G.streak++;G.maxStreak=Math.max(G.maxStreak,G.streak);G.coins+=G.streak>=5?2:1;{const gain=10+Math.min(G.streak,20)*2+((performance.now()-G.last)<1500?5:0);G.pts=(G.pts||0)+gain;flyAt($('u'+G.pos),'+'+gain);if(G.streak&&G.streak%5===0){comboFx('COMBO x'+G.streak+'!');G.pts+=25}}
+  G.streak++;G.maxStreak=Math.max(G.maxStreak,G.streak);G.coins+=G.streak>=5?3:2;{const gain=10+Math.min(G.streak,20)*2+((performance.now()-G.last)<1500?5:0);G.pts=(G.pts||0)+gain;flyAt($('u'+G.pos),'+'+gain);if(G.streak&&G.streak%5===0){comboFx('COMBO x'+G.streak+'!');G.pts+=25}}
   moveCar(G.car,G.pos);whoosh(G.streak>=5);hud();
   if(G.pos>=units(G.l).length)return finish();highlight();
 }
@@ -245,7 +245,7 @@ function finish(){
   const spm=Math.round(syllCount(l,n)/(t/60)),acc=Math.max(0,1-(G.miss+G.helped.length)/n);
   if(G.practice){S.coins+=G.coins;S.points+=G.pts||0;save();confetti();modal(`<div style="font-size:70px">💪</div>Great job! Practice complete<br>🪙 +${G.coins} · <span class="ptsbig" data-cnt="${G.pts||0}">0</span> pts<br><br><button class="big" onclick="closeModal();toMap()">לַמַּפָּה</button>`);return}
   const st=stars(l,spm,acc);const prev=S.best[l.id];const rec_=!prev||t<prev.time;
-  G.pts=(G.pts||0)+st*100+(rec_&&prev?500:0);S.points+=G.pts;S.coins+=G.coins+st*10;if(!S.days.includes(today()))S.days.push(today());
+  G.pts=(G.pts||0)+st*100+(rec_&&prev?500:0);S.points+=G.pts;S.coins+=G.coins+st*15+(rec_&&prev?40:0)+(!prev?30:0)+(G.miss===0?15:0);if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:l.id,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1)});
   if(!prev||st>prev.stars||rec_)S.best[l.id]={stars:Math.max(st,prev?prev.stars:0),time:rec_?t:prev.time,times:rec_?G.times:prev.times,spm:Math.max(spm,prev?prev.spm:0)};
   save();confetti(st===3||rec_);
@@ -257,7 +257,7 @@ function finish(){
   const i=G.i;$('agB').onclick=()=>{closeModal();start(i)};
   if(helped.length)$('prB').onclick=()=>{closeModal();const k=l.kind;start(i,k==='words'?{id:'pr',page:l.page,title:'🎯 Practice',kind:'words',words:helped.map(h=>h.u)}:{id:'pr',page:l.page,title:'🎯 Practice',kind:k,units:helped.map(h=>k==='letters'?l.units[l.say.indexOf(h.t)]:h.u),say:helped.map(h=>h.t)})};
 }
-function quit(){if(G){G.running=false}stopListen();speechSynthesis&&speechSynthesis.cancel();toMap()}
+function quit(){if(G&&G.running){G.running=false;S.coins+=G.coins||0;save()}stopListen();speechSynthesis&&speechSynthesis.cancel();toMap()}
 function toMap(){show('sMap');renderMap()}
 function modal(h){$('card').innerHTML=h;$('modal').style.display='flex';countUp()}
 function closeModal(){$('modal').style.display='none'}
@@ -332,7 +332,7 @@ $('spGo').onclick=()=>{$('spGo').style.display='none';ac();
     c.textContent=n;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');beep(440+ (3-n)*80,.15);n--;setTimeout(step,800)};step()};
 function spTick(){if(!R||!R.running)return;const t=(performance.now()-R.t0)/1000;$('spTimer').textContent=t.toFixed(1);
   const best=S.speed[R.p.key];if(best){const f=Math.min(1,t/best.time);$('spGhost').style.right=(f*($('spTrack').clientWidth-50))+'px';$('spTimer').classList.toggle('behind',t>best.time)}
-  if(Math.floor(t)!==R.sec){R.sec=Math.floor(t);if(R.sec>0&&R.sec%10===0)beep(990,.06,'triangle')}
+  if(Math.floor(t)!==R.sec){R.sec=Math.floor(t);if(R.sec>0&&R.sec%10===0){beep(990,.06,'triangle');if((R.cp||0)<18){R.cp=(R.cp||0)+3;S.coins+=3;save()}}}
   requestAnimationFrame(spTick)}
 $('spX').onclick=()=>{if(!R||!R.running)return;R.mist++;$('spMist').textContent='✗ '+R.mist;boop();const x=$('spX');x.classList.remove('pop');void x.offsetWidth;x.classList.add('pop');$('spMist').classList.toggle('over',R.mist>CFG.maxMist)};
 $('spQuit').onclick=()=>{if(R)R.running=false;toMap()};
@@ -342,7 +342,7 @@ $('spStop').onclick=()=>{if(!R||!R.running)return;R.running=false;$('spStop').st
     return modal(`<div style="font-size:90px">🐢💨</div><div style="font-size:44px">Whoa, too fast!</div><div style="font-size:34px">Let's read it again, slowly and carefully</div><div style="font-size:26px;color:#888">⏱ ${t.toFixed(1)} · ✗ ${R.mist}</div><br><button class="big" id="rtB">🔁 Try again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`),$('rtB').onclick=()=>{closeModal();speedStart(R.i)}}
   const spm=Math.round(p.syl/(t/60)),acc=Math.max(0,1-R.mist/Math.max(10,p.syl/10));
   const st=stars({kind:p.kind},spm,R.mist===0?1:acc);const prev=S.speed[p.key];const rec=!prev||t<prev.time;
-  const coins=Math.round(p.syl/10)+st*10+(rec&&prev?25:0);const pts=p.syl*2+Math.max(0,spm-30)*3+st*100+(rec&&prev?500:0)+(R.mist===0?200:0);S.points+=pts;S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
+  const coins=Math.round(p.syl/5)+st*15+(rec&&prev?40:0)+(!prev?30:0)+(R.mist===0?15:0);const pts=p.syl*2+Math.max(0,spm-30)*3+st*100+(rec&&prev?500:0)+(R.mist===0?200:0);S.points+=pts;S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:p.key,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1),speed:1});
   S.speed[p.key]={time:rec?t:prev.time,stars:Math.max(st,prev?prev.stars:0),spm:Math.max(spm,prev?prev.spm:0),runs:(prev?prev.runs:0)+1};save();
   confetti(rec);if(rec&&prev)setTimeout(()=>confetti(true),700);
@@ -351,7 +351,7 @@ $('spStop').onclick=()=>{if(!R||!R.running)return;R.running=false;$('spStop').st
    <div style="font-size:64px;font-weight:bold">⏱ ${t.toFixed(1)} sec</div><div><span class="ptsbig" data-cnt="${pts}">0</span> points!${R.mist===0?' 🎯 Perfect +200':''}</div>
    <div class="cmp"><div>You ${icon(S.char)}</div><div class="bar"><span style="width:${t/mx*100}%;background:#2bd66b"></span></div><div>${t.toFixed(1)}</div>
    <div>Record 👻</div><div class="bar"><span style="width:${bt/mx*100}%;background:#bbb"></span></div><div>${bt.toFixed(1)}</div></div>
-   <div style="font-size:30px">🚀 ${spm} syllables/min · ✗ ${R.mist} · 🪙 +${coins}</div>
+   <div style="font-size:30px">🚀 ${spm} syllables/min · ✗ ${R.mist} · 🪙 +${coins+(R.cp||0)}</div>
    ${prev&&!rec?`<div style="font-size:26px">Only ${(t-prev.time).toFixed(1)} sec from your record — you can do it!</div>`:''}<br>
    <button class="big" id="agB">🔁 Again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️ Map</button>`);if(rec&&prev){$('card').classList.add('shk');fanfare()}
   $('agB').onclick=()=>{closeModal();speedStart(R.i)};

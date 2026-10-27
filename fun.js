@@ -49,7 +49,7 @@ const CHEST=(open)=>`<svg viewBox="0 0 120 110" class="chestsvg"><defs><linearGr
  <g class="clid" ${open?'transform="rotate(-28 14 54)"':''}><path d="M14 54 Q14 22 60 22 Q106 22 106 54Z" fill="url(#cw)" stroke="#5B3409" stroke-width="3"/><path d="M34 26 V54 M86 26 V54" stroke="#F6C343" stroke-width="5"/></g></svg>`;
 function chestBonus(perfect){
   if(perfect)S.fun.perf=(S.fun.perf||0)+1;else S.fun.perf=0;
-  const lines=[],base=rnd(5,15);let tot=base;lines.push(['Lucky find',base]);
+  const lines=[],base=rnd(10,25);let tot=base;lines.push(['Lucky find',base]);
   if(S.fun.perf>=2){const b=Math.min(50,S.fun.perf*5);tot+=b;lines.push([`Perfect streak ×${S.fun.perf}`,b])}
   const ds=dayStreak();if(ds>=2){const b=Math.min(30,ds*3);tot+=b;lines.push([`${ds}-day reading streak`,b])}
   if(Math.random()<.15){tot+=50;lines.push(['RARE PEARL!',50])}
@@ -57,13 +57,13 @@ function chestBonus(perfect){
   return {tot,lines}}
 function showChest(perfect,title){
   document.querySelectorAll('.chestov').forEach(x=>x.remove());
-  const B=chestBonus(perfect);S.coins+=B.tot;S.fun.chests=(S.fun.chests||0)+1;save();
+  const B=chestBonus(perfect);S.fun.chests=(S.fun.chests||0)+1;save();
   const c=document.createElement('div');c.className='chestov';
   c.innerHTML=`<div class="chbox"><div class="chttl">${title||'You found a treasure chest!'}</div><div class="chwrap">${CHEST(false)}<div class="chpeek">${MASCOT.yanky.svg()}</div></div><div class="chtap">Tap to open!</div></div>`;
   document.body.appendChild(c);SFX.sparkle();
   let opened=false;c.onclick=()=>{if(opened){c.classList.add('out');setTimeout(()=>{c.remove();renderMap()},350);return}opened=true;
     const w=c.querySelector('.chwrap');w.classList.add('shakec');SFX.drumroll();
-    setTimeout(()=>{w.classList.remove('shakec');w.querySelector('.chestsvg').outerHTML=CHEST(true);SFX.creak();
+    setTimeout(()=>{w.classList.remove('shakec');w.querySelector('.chestsvg').outerHTML=CHEST(true);SFX.creak();S.coins+=B.tot;save();
       const o=splitW(B.tot),gems=[];TIER.forEach(([k])=>{for(let i=0;i<Math.min(o[k],6);i++)gems.push(k)});
       w.insertAdjacentHTML('beforeend',gems.map((g,i)=>`<span class="cgem" style="--x:${(i-(gems.length-1)/2)*34}px;--d:${i*.08}s">${GEM[g]}</span>`).join(''));
       gems.forEach((_,i)=>SFX.coin(i*.08+.1));
