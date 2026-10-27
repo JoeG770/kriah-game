@@ -52,8 +52,8 @@ function chestBonus(perfect){
   const lines=[],base=rnd(10,25);let tot=base;lines.push(['Lucky find',base]);
   if(S.fun.perf>=2){const b=Math.min(50,S.fun.perf*5);tot+=b;lines.push([`Perfect streak ×${S.fun.perf}`,b])}
   const ds=dayStreak();if(ds>=2){const b=Math.min(30,ds*3);tot+=b;lines.push([`${ds}-day reading streak`,b])}
-  if(Math.random()<.15){tot+=50;lines.push(['RARE PEARL!',50])}
-  if(Math.random()<.03){tot+=250;lines.push(['SUPER RARE DIAMOND!!',250])}
+  if(Math.random()<.15){tot+=50;lines.push(['Rare pearl find!',50])}
+  if(Math.random()<.03){tot+=250;lines.push(['Super rare diamond!',250])}
   return {tot,lines}}
 function showChest(perfect,title){
   document.querySelectorAll('.chestov').forEach(x=>x.remove());
@@ -63,7 +63,7 @@ function showChest(perfect,title){
   document.body.appendChild(c);SFX.sparkle();
   let opened=false;c.onclick=()=>{if(opened){c.classList.add('out');setTimeout(()=>{c.remove();renderMap()},350);return}opened=true;
     const w=c.querySelector('.chwrap');w.classList.add('shakec');SFX.drumroll();
-    setTimeout(()=>{w.classList.remove('shakec');w.querySelector('.chestsvg').outerHTML=CHEST(true);SFX.creak();S.coins+=B.tot;save();
+    setTimeout(()=>{w.classList.remove('shakec');w.querySelector('.chestsvg').outerHTML=CHEST(true);SFX.creak();window._why='Treasure chest';S.coins+=B.tot;save();if(window.LEDGER)LEDGER.chestDone(B);
       const o=splitW(B.tot),gems=[];TIER.forEach(([k])=>{for(let i=0;i<Math.min(o[k],6);i++)gems.push(k)});
       w.insertAdjacentHTML('beforeend',gems.map((g,i)=>`<span class="cgem" style="--x:${(i-(gems.length-1)/2)*34}px;--d:${i*.08}s">${GEM[g]}</span>`).join(''));
       gems.forEach((_,i)=>SFX.coin(i*.08+.1));
@@ -88,8 +88,8 @@ function boxBtn(){let b=document.getElementById('mbox');const due=S.fun.box!==to
   if(!due){b&&b.remove();return}
   if(!b){b=document.createElement('button');b.id='mbox';b.innerHTML=`<svg viewBox="0 0 64 64"><rect x="8" y="26" width="48" height="32" rx="5" fill="#EC4899"/><rect x="4" y="18" width="56" height="12" rx="4" fill="#F472B6"/><rect x="28" y="18" width="8" height="40" fill="#FDE68A"/><path d="M32 18 Q20 2 14 12 Q14 18 32 18 Q44 18 50 12 Q44 2 32 18Z" fill="#FDE68A" stroke="#F59E0B" stroke-width="2"/><text x="32" y="50" font-size="20" text-anchor="middle" fill="#fff" font-weight="900" font-family="sans-serif">?</text></svg><span>Daily surprise!</span>`;
     document.getElementById('sMap').appendChild(b);
-    b.onclick=()=>{S.fun.box=today();const prize=pick([['silver',rnd(8,20)],['gold',rnd(20,40)],['pearl',50],['gold',30]]);S.coins+=prize[1];save();b.remove();SFX.drumroll(10);
-      setTimeout(()=>dance({title:'Mystery box!',sub:'You got '+(prize[0]==='pearl'?'a pearl':prize[1]+' silver worth of coins')+' — come back tomorrow!',who:pick(['yanky','yokel','kerel']),art:GEM[prize[0]].replace('class="ic gem"','class="ic gem" width="110" height="110"')}),600)}}}
+    b.onclick=()=>{S.fun.box=today();const prize=pick([['silver',rnd(8,20)],['gold',rnd(20,40)],['pearl',50],['gold',30]]);window._why='Daily surprise box';S.coins+=prize[1];save();b.remove();SFX.drumroll(10);
+      setTimeout(()=>dance({title:'Mystery box!',sub:'You got '+(prize[0]==='pearl'?'a pearl':LEDGER.words(prize[1]))+' — come back tomorrow!',who:pick(['yanky','yokel','kerel']),art:GEM[prize[0]].replace('class="ic gem"','class="ic gem" width="110" height="110"')}),600)}}}
 const _rm2=renderMap;renderMap=function(){_rm2.apply(this,arguments);boxBtn()};
 // ---------- shop: fix clipped subtitles (English line + Hebrew line) ----------
 const _oc=openChars;openChars=function(){_oc.apply(this,arguments);

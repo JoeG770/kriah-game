@@ -245,7 +245,7 @@ function finish(){
   const spm=Math.round(syllCount(l,n)/(t/60)),acc=Math.max(0,1-(G.miss+G.helped.length)/n);
   if(G.practice){S.coins+=G.coins;S.points+=G.pts||0;save();confetti();modal(`<div style="font-size:70px">💪</div>Great job! Practice complete<br>🪙 +${G.coins} · <span class="ptsbig" data-cnt="${G.pts||0}">0</span> pts<br><br><button class="big" onclick="closeModal();toMap()">לַמַּפָּה</button>`);return}
   const st=stars(l,spm,acc);const prev=S.best[l.id];const rec_=!prev||t<prev.time;
-  G.pts=(G.pts||0)+st*100+(rec_&&prev?500:0);S.points+=G.pts;S.coins+=G.coins+st*15+(rec_&&prev?40:0)+(!prev?30:0)+(G.miss===0?15:0);if(!S.days.includes(today()))S.days.push(today());
+  G.pts=(G.pts||0)+st*100+(rec_&&prev?500:0);S.points+=G.pts;window.LAST={before:S.coins,lines:[['Reading the page',G.coins],['Stars ×'+st,st*15],['New record',rec_&&prev?40:0],['First time on this page',!prev?30:0],['No mistakes',G.miss===0?15:0]].filter(x=>x[1]>0)};S.coins+=G.coins+st*15+(rec_&&prev?40:0)+(!prev?30:0)+(G.miss===0?15:0);if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:l.id,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1)});
   if(!prev||st>prev.stars||rec_)S.best[l.id]={stars:Math.max(st,prev?prev.stars:0),time:rec_?t:prev.time,times:rec_?G.times:prev.times,spm:Math.max(spm,prev?prev.spm:0)};
   save();confetti(st===3||rec_);
@@ -342,7 +342,7 @@ $('spStop').onclick=()=>{if(!R||!R.running)return;R.running=false;$('spStop').st
     return modal(`<div style="font-size:90px">🐢💨</div><div style="font-size:44px">Whoa, too fast!</div><div style="font-size:34px">Let's read it again, slowly and carefully</div><div style="font-size:26px;color:#888">⏱ ${t.toFixed(1)} · ✗ ${R.mist}</div><br><button class="big" id="rtB">🔁 Try again</button> <button class="big" style="background:#5b2bd6;box-shadow:0 8px 0 #3b1d8f" onclick="closeModal();toMap()">🗺️</button>`),$('rtB').onclick=()=>{closeModal();speedStart(R.i)}}
   const spm=Math.round(p.syl/(t/60)),acc=Math.max(0,1-R.mist/Math.max(10,p.syl/10));
   const st=stars({kind:p.kind},spm,R.mist===0?1:acc);const prev=S.speed[p.key];const rec=!prev||t<prev.time;
-  const coins=Math.round(p.syl/5)+st*15+(rec&&prev?40:0)+(!prev?30:0)+(R.mist===0?15:0);const pts=p.syl*2+Math.max(0,spm-30)*3+st*100+(rec&&prev?500:0)+(R.mist===0?200:0);S.points+=pts;S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
+  const coins=Math.round(p.syl/5)+st*15+(rec&&prev?40:0)+(!prev?30:0)+(R.mist===0?15:0);const pts=p.syl*2+Math.max(0,spm-30)*3+st*100+(rec&&prev?500:0)+(R.mist===0?200:0);S.points+=pts;window.LAST={before:S.coins-(R.cp||0),lines:[['Pages read',Math.round(p.syl/5)],['Speed checkpoints',R.cp||0],['Stars ×'+st,st*15],['New record',rec&&prev?40:0],['First time on this page',!prev?30:0],['No mistakes',R.mist===0?15:0]].filter(x=>x[1]>0)};S.coins+=coins;if(!S.days.includes(today()))S.days.push(today());
   S.runs.push({id:p.key,d:Date.now(),spm,acc:+acc.toFixed(2),t:+t.toFixed(1),speed:1});
   S.speed[p.key]={time:rec?t:prev.time,stars:Math.max(st,prev?prev.stars:0),spm:Math.max(spm,prev?prev.spm:0),runs:(prev?prev.runs:0)+1};save();
   confetti(rec);if(rec&&prev)setTimeout(()=>confetti(true),700);

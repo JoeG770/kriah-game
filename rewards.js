@@ -7,10 +7,11 @@ silver:'<svg class="ic gem" viewBox="0 0 24 24"><defs><radialGradient id="gs" cx
 gold:'<svg class="ic gem" viewBox="0 0 24 24"><defs><radialGradient id="gg" cx=".35" cy=".3"><stop offset="0" stop-color="#FFF6C8"/><stop offset=".5" stop-color="#FFC53D"/><stop offset="1" stop-color="#D98A00"/></radialGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#gg)" stroke="#C27C00" stroke-width="1.3"/><circle cx="12" cy="12" r="6" fill="none" stroke="#C27C00" stroke-width="1.1"/><path d="M12 7.6l1.3 2.6 2.9.2-2.2 1.9.7 2.9L12 13.6l-2.7 1.6.7-2.9-2.2-1.9 2.9-.2z" fill="#C27C00"/></svg>',
 pearl:'<svg class="ic gem" viewBox="0 0 24 24"><defs><radialGradient id="gp" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#F6EEF7"/><stop offset="1" stop-color="#C9B8D6"/></radialGradient></defs><circle cx="12" cy="12" r="9" fill="url(#gp)" stroke="#B9A6C9" stroke-width="1"/><ellipse cx="9" cy="8.5" rx="2.6" ry="1.6" fill="#fff" opacity=".9"/></svg>',
 diamond:'<svg class="ic gem" viewBox="0 0 24 24"><path d="M6 4h12l4 5.5L12 21 2 9.5z" fill="#7DD3FC" stroke="#0284C7" stroke-width="1.2" stroke-linejoin="round"/><path d="M2 9.5h20M8 4l-2 5.5L12 21l6-11.5L16 4M6 9.5L12 4l6 5.5" fill="none" stroke="#0284C7" stroke-width=".9" stroke-linejoin="round"/><path d="M8 5.5l-1.3 3" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>'};
-const GEMNAME={silver:'Silver coins',gold:'Gold coins',pearl:'Pearls',diamond:'Diamonds'};
+function gname(k,n){return n===1?{silver:'Silver',gold:'Gold',pearl:'Pearl',diamond:'Diamond'}[k]:{silver:'Silver',gold:'Gold',pearl:'Pearls',diamond:'Diamonds'}[k]}
+const GEMNAME={silver:'Silver',gold:'Gold',pearl:'Pearls',diamond:'Diamonds'};
 function splitW(n){n=Math.max(0,Math.floor(n));const o={};TIER.forEach(([k,v])=>{o[k]=Math.floor(n/v);n%=v});return o}
 function walletHTML(n,compact){const o=splitW(n);const parts=TIER.filter(([k])=>!compact||o[k]||k==='silver'&&!TIER.some(([q])=>o[q]));
-  return '<span class="wal">'+parts.map(([k])=>`<span class="wt" title="${GEMNAME[k]}">${GEM[k]}<b>${o[k]}</b></span>`).join('')+'</span>'}
+  return '<span class="wal">'+parts.map(([k])=>`<span class="wt" title="${GEMNAME[k]}">${GEM[k]}<b>${o[k]}</b><i class="wl">${o[k]===1?GEMNAME[k].replace(/s$/,'').replace(' coins',''):GEMNAME[k].replace(' coins','')}</i></span>`).join('')+'</span>'}
 const priceHTML=n=>n?walletHTML(n,true):'<span class="free">Free</span>';
 
 // ---------- Mascot cast (SVG, viewBox 0 0 100 110; limbs in groups for dancing) ----------
@@ -177,13 +178,13 @@ openChars=function(){const n=S.coins;
   const grid=shopTab!=='treas'
    ?`<div class="shop">${Object.entries(MASCOT).filter(([k,m])=>!!m.fam===(shopTab==='family')).map(([k,m])=>{const own=S.owned.includes(k);return `<button class="it ${S.char===k?'sel':''} ${own?'own':n<m.price?'lock':''}" data-k="${k}" data-p="${m.price}"><div class="art">${m.svg()}</div><div class="nm">${m.name}</div><div class="sb">${m.sub}</div><div class="pr">${own?(S.char===k?'✓ Racing':'Owned · tap to pick'):priceHTML(m.price)}</div></button>`}).join('')}</div>`
    :`<div class="shop">${TREAS.map(([k,nm,he,p,art])=>{const own=S.treas.includes(k);return `<button class="it ${own?'own':n<p?'lock':''}" data-k="${k}" data-p="${p}"><div class="art">${art}</div><div class="nm">${nm}</div><div class="sb he">${he}</div><div class="pr">${own?'✓ In your collection':priceHTML(p)}</div></button>`}).join('')}</div>`;
-  modal(`<div class="shophd"><div><div class="ttl">Treasure Shop</div><div class="hint">Read to earn coins · 10 silver = 1 gold · 5 gold = 1 pearl · 5 pearls = 1 diamond</div></div>${walletHTML(n)}</div>${tabs}${grid}<button class="big" onclick="closeModal();renderMap()">Close</button>`);
+  modal(`<div class="shophd"><div><div class="ttl">Treasure Shop</div><div class="hint">Read to earn coins · 10 Silver = 1 Gold · 5 Gold = 1 Pearl · 5 Pearls = 1 Diamond</div></div>${walletHTML(n)}</div>${tabs}${grid}<button class="big" onclick="closeModal();renderMap()">Close</button>`);
   $('card').classList.add('shopcard');
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{shopTab=b.dataset.t;openChars()});
   document.querySelectorAll('.shop .it').forEach(b=>b.onclick=()=>{const k=b.dataset.k,p=+b.dataset.p;
-    if(shopTab!=='treas'){if(!S.owned.includes(k)){if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}S.coins-=p;S.owned.push(k);S.char=k;save();openChars();dance({title:'New character!',sub:MASCOT[k].name+' joined your team',who:k,gems:p});return}S.char=k;save();openChars();return}
+    if(shopTab!=='treas'){if(!S.owned.includes(k)){if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}const bf=S.coins;window._why='Bought '+MASCOT[k].name;S.coins-=p;S.owned.push(k);S.char=k;save();openChars();LEDGER.bought(MASCOT[k].name,p,bf,MASCOT[k].svg());return}S.char=k;save();openChars();return}
     if(S.treas.includes(k))return;if(S.coins<p){boop();b.classList.add('shake');setTimeout(()=>b.classList.remove('shake'),500);return}
-    const t=TREAS.find(x=>x[0]===k);S.coins-=p;S.treas.push(k);save();openChars();dance({title:'You got it!',sub:t[1]+' is in your collection',art:t[4],gems:p})})};
+    const t=TREAS.find(x=>x[0]===k);const bf=S.coins;window._why='Bought '+t[1];S.coins-=p;S.treas.push(k);save();openChars();LEDGER.bought(t[1],p,bf,t[4])})};
 
 // ---------- dancing celebration (replaces falling confetti) ----------
 const MOVES=['hop','spin','kick','shimmy','twist'];
