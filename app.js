@@ -1,9 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const L=window.LEVELS;
-const KEY='kriah-save-v1';
+const KEY=window.PROFILE_KEY||'kriah-save-v1';
 const S=Object.assign({points:0,coins:0,best:{},runs:[],vowelMiss:{},days:[],char:'🚗',owned:['🚗'],unlockAll:false,speed:{},mode:'speed'},JSON.parse(localStorage.getItem(KEY)||'{}'));
-const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(S));if(window.PROFILES)PROFILES.push()};
 const CARSVG=`<svg class="carsvg" viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg"><path d="M4 26 Q4 18 12 17 L20 8 Q23 5 28 5 L44 5 Q50 5 53 10 L58 17 Q62 18 62 24 L62 29 Q62 31 60 31 L6 31 Q4 31 4 29Z" fill="#e63946" stroke="#a4161a" stroke-width="1.5"/><path d="M22 10 Q24 8 28 8 L34 8 L34 17 L15 17Z M37 8 L44 8 Q48 8 50 11 L54 17 L37 17Z" fill="#bfe9ff"/><rect x="4" y="21" width="5" height="4" rx="2" fill="#ffe066"/><circle cx="17" cy="31" r="7" fill="#222"/><circle cx="17" cy="31" r="3" fill="#ccc"/><circle cx="49" cy="31" r="7" fill="#222"/><circle cx="49" cy="31" r="3" fill="#ccc"/></svg>`;
 function icon(c){return (window.MASCOT&&MASCOT[c])?MASCOT[c].svg():c==='🚗'?CARSVG:c}
 const CHARS=[['🚗',0],['🚀',50],['🦄',120],['🐉',250],['🏎️',400],['🦖',600],['🛸',800],['🐎',1000]];
