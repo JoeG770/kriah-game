@@ -1,6 +1,6 @@
 // Heimish Chasidish (Hungarian/Polish-style Ashkenazi) transliteration from nikud.
 (function(root){
-const LN={'אָלֶף':'AH-lef','בֵית':'VAISS','בֵּית':'BAISS','גִימֶל':'GI-mel','דָלֶת':'DAH-led','הֵא':'HAI','וָו':'VUV','זַיִן':'ZAI-en','חֵית':'KHESS','טֵית':'TESS','יוּד':'YID','כָף':'KHUF','כָּף':'KUF','לָמֶד':'LAH-med','מֵם':'MEM','נוּן':'NIN','סָמֶךְ':'SAH-mekh','עַיִן':'AI-en','פֵא':'FAI','פֵּא':'PAI','צָדִי':'TSAH-dik','צַדִי':'TSAH-dik','קוּף':'KIF','רֵישׁ':'RAISH','שִׁין':'SHIN','שִׂין':'SIN','תָו':'SUF','תָּו':'TUF','כַּף':'KUF',
+const LN={'אָלֶף':'AH-lef','בֵית':'VAISS','בֵּית':'BAISS','גִימֶל':'GI-mel','דָלֶת':'DAH-led','הֵא':'HAI','וָו':'VUV','זַיִן':'ZAI-en','חֵית':'KHESS','טֵית':'TESS','יוּד':'YID','כָף':'KHUF','כָּף':'KUF','לָמֶד':'LAH-med','מֵם':'MEM','נוּן':'NIN','סָמֶךְ':'SAH-mech','עַיִן':'AI-en','פֵא':'FAI','פֵּא':'PAI','צָדִי':'TSAH-dik','צַדִי':'TSAH-dik','קוּף':'KIF','רֵישׁ':'Raish.','שִׁין':'SHIN','שִׂין':'SIN','תָו':'SUF','תָּו':'TUF','כַּף':'KUF',
  'כָף סוֹפִית':'EN-de KHUF','כָּף סוֹפִית':'EN-de KUF','מֵם סוֹפִית':'EN-de MEM','נוּן סוֹפִית':'EN-de NIN','פֵא סוֹפִית':'EN-de FAI','צָדִי סוֹפִית':'EN-de TSAH-dik',
  'יִשְׂרָאֵל':'yis-RU-el','שַׁבָּת':'SHU-bess','בָּרוּךְ':'BU-rikh','תּוֹרָה':'TOY-reh','בֵּית':'BAISS',
  'ך':'EN-de KHUF','ךּ':'EN-de KUF','ם':'EN-de MEM','ן':'EN-de NIN','ף':'EN-de FAI','ץ':'EN-de TSAH-dik'};
